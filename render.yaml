@@ -17,5 +17,5 @@ services:
 databases:
   - name: yellowbird-db
     databaseName: school_transport
-    user: postgres
+    user: yellowbird_user
     plan: free
