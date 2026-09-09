@@ -50,8 +50,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_origin_regex=".*", # Allow absolutely ALL origins for testing
+    allow_origin_regex=r"https?://.*|capacitor://.*|http://localhost.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
