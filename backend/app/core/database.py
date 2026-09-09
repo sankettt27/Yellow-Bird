@@ -14,16 +14,32 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
+import re
+import ssl
+
+db_url = settings.DATABASE_URL
+connect_args = {}
+
+if "sqlite" in db_url:
+    connect_args = {"check_same_thread": False}
+elif "postgresql" in db_url:
+    # Strip invalid 'sslmode' query param for asyncpg
+    if "sslmode=" in db_url:
+        db_url = re.sub(r"[?&]sslmode=[^&]+", "", db_url)
+        if db_url.endswith("?") or db_url.endswith("&"):
+            db_url = db_url[:-1]
+    
+    # Create SSL context for cloud PostgreSQL (Neon / Supabase)
+    ssl_ctx = ssl.create_default_context()
+    ssl_ctx.check_hostname = False
+    ssl_ctx.verify_mode = ssl.CERT_NONE
+    connect_args = {"ssl": ssl_ctx}
+
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    db_url,
     echo=settings.DEBUG,
     future=True,
-    # SQLite needs check_same_thread=False
-    connect_args=(
-        {"check_same_thread": False}
-        if "sqlite" in settings.DATABASE_URL
-        else {}
-    ),
+    connect_args=connect_args,
 )
 
 async_session_factory = async_sessionmaker(

@@ -1,6 +1,10 @@
 import sqlite3
+import os
 
 def migrate():
+    if not os.path.exists('transport.db'):
+        print("No local transport.db found — skipping SQLite migration.")
+        return
     conn = sqlite3.connect('transport.db')
     cursor = conn.cursor()
     
