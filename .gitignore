@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+ENV/
+
+# Environment Variables
+.env
+.env.local
+.env.production
+
+# Build Outputs
+dist/
+build/
+android/app/build/
+android/.gradle/
+android/build/
+*.apk
+*.aab
+
+# Database & SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

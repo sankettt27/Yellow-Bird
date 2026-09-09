@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: yellowbird-backend
+    runtime: python
+    buildCommand: "pip install -r backend/requirements.txt"
+    startCommand: "cd backend && python migrate_db.py && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: yellowbird-db
+          property: connectionString
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: '["*"]'
+
+databases:
+  - name: yellowbird-db
+    databaseName: school_transport
+    user: postgres
+    plan: free
