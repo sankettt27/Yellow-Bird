@@ -354,12 +354,28 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
             </motion.button>
           </form>
 
-          {/* Demo Credentials */}
-          <div className="mt-8 p-4 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/60 dark:to-gray-800/30 border border-gray-200 dark:border-gray-700/50">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 uppercase tracking-wider flex items-center gap-1.5">
+          {/* Quick Admin Portal Link */}
+          <div className="mt-4 text-center">
+            <a
+              href="/admin"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 dark:text-brand-400 hover:underline bg-brand-50 dark:bg-brand-500/10 px-3 py-1.5 rounded-lg border border-brand-200 dark:border-brand-500/20 transition-all"
+            >
               <Shield className="w-3.5 h-3.5" />
-              Demo Credentials
-            </p>
+              Switch to Dedicated Admin Portal (/admin) →
+            </a>
+          </div>
+
+          {/* Demo Credentials */}
+          <div className="mt-6 p-4 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/60 dark:to-gray-800/30 border border-gray-200 dark:border-gray-700/50">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Shield className="w-3.5 h-3.5" />
+                Demo Credentials
+              </p>
+              <a href="/admin" className="text-[11px] font-bold text-brand-600 dark:text-brand-400 hover:underline">
+                /admin link
+              </a>
+            </div>
             <div className="grid grid-cols-1 gap-2 text-xs text-gray-600 dark:text-gray-300">
               <div className="flex items-center gap-2 p-2 rounded-lg bg-white/60 dark:bg-gray-700/30">
                 <span className="px-2 py-0.5 rounded-md bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 font-semibold text-[10px] uppercase">Super</span>
