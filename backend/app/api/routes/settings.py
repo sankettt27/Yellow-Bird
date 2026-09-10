@@ -102,8 +102,8 @@ class FullAdminSettingsUpdateSchema(BaseModel):
     notifications: Optional[UpdateNotificationSettingsSchema] = None
 
 
-async def _get_or_find_school(db: AsyncSession, current_user: User) -> School | None:
-    """Helper to locate the school for current user, falling back to first active school in DB."""
+async def _get_or_find_school(db: AsyncSession, current_user: User) -> School:
+    """Helper to locate the school for current user, falling back to first active school in DB or creating one if missing."""
     if current_user.school_id:
         res = await db.execute(select(School).where(School.id == current_user.school_id))
         school = res.scalar_one_or_none()
@@ -113,9 +113,31 @@ async def _get_or_find_school(db: AsyncSession, current_user: User) -> School | 
     # Fallback for superadmin or unlinked admin
     res = await db.execute(select(School).where(School.is_active == True).order_by(School.created_at.asc()).limit(1))
     school = res.scalar_one_or_none()
-    if school and not current_user.school_id:
+
+    if not school:
+        school = School(
+            name="Greenfield International School",
+            address="123 Education Boulevard, Sector 42",
+            city="New Delhi",
+            state="Delhi",
+            country="India",
+            zip_code="110042",
+            phone="+91-11-2345-6789",
+            email="admin@greenfield.edu.in",
+            website="https://greenfield.edu.in",
+            latitude=20.005,
+            longitude=73.785,
+            is_active=True,
+            settings=dict(DEFAULT_SETTINGS),
+        )
+        db.add(school)
+        await db.commit()
+        await db.refresh(school)
+
+    if not current_user.school_id:
         current_user.school_id = school.id
         await db.commit()
+
     return school
 
 

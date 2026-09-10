@@ -17,6 +17,7 @@ const BASE_URL = rawApiUrl
 
 const api = axios.create({
   baseURL: BASE_URL,
+  timeout: 60000, // 60 seconds to allow Render backend to wake up from cold boot
   headers: {
     'Content-Type': 'application/json',
     'Bypass-Tunnel-Reminder': 'true' // Required to bypass localtunnel's anti-phishing splash page
