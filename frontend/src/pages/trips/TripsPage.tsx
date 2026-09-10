@@ -80,6 +80,49 @@ function speedColor(speed: number): string {
   return '#ef4444';                   // red – fast
 }
 
+// Haversine distance calculator for fallback when distance_km is 0
+function calculateDistanceKm(locs: TripLocation[]): number {
+  if (locs.length < 2) return 0;
+  let total = 0;
+  for (let i = 1; i < locs.length; i++) {
+    const p1 = locs[i - 1];
+    const p2 = locs[i];
+    const R = 6371; // radius of Earth in km
+    const dLat = (p2.latitude - p1.latitude) * Math.PI / 180;
+    const dLon = (p2.longitude - p1.longitude) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(p1.latitude * Math.PI / 180) *
+      Math.cos(p2.latitude * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    total += R * c;
+  }
+  return total;
+}
+
+const replayBusIcon = L.divIcon({
+  html: `
+    <div style="position:relative;width:36px;height:36px;">
+      <div style="
+        position:absolute;inset:0;
+        background:#3b82f6;
+        border-radius:50%;
+        border:3px solid white;
+        box-shadow:0 0 12px #3b82f6aa;
+        display:flex;align-items:center;justify-content:center;
+      ">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 6v6"/><path d="M16 6v6"/><path d="M4 12h16"/><path d="M2 17h20"/><path d="M4 17l1-9a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2l1 9"/>
+        </svg>
+      </div>
+    </div>
+  `,
+  className: 'custom-replay-bus-icon',
+  iconSize: [36, 36],
+  iconAnchor: [18, 18],
+});
+
 // ─── Status Badge ─────────────────────────────────────────────
 function StatusBadge({ status }: { status: string }) {
   const styles: Record<string, string> = {
@@ -118,10 +161,41 @@ function TripDetailModal({ trip, onClose }: { trip: TripItem; onClose: () => voi
     ? polyline[Math.floor(polyline.length / 2)]
     : [20.0003, 73.7845];
 
+  // Replay state
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [replayIndex, setReplayIndex] = useState(0);
+  const [speedMultiplier, setSpeedMultiplier] = useState<number>(1);
+
+  // Playback timer loop
+  useEffect(() => {
+    let timer: any = null;
+    if (isPlaying && locations.length > 0) {
+      timer = setInterval(() => {
+        setReplayIndex((prev) => {
+          if (prev >= locations.length - 1) {
+            setIsPlaying(false);
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, Math.max(50, 300 / speedMultiplier));
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isPlaying, locations.length, speedMultiplier]);
+
+  // Haversine distance fallback if trip.distance_km is 0
+  const distanceKm = trip.distance_km > 0
+    ? trip.distance_km
+    : calculateDistanceKm(locations);
+
   // Speed stats
   const speeds = locations.map(l => l.speed).filter(s => s > 0);
   const maxSpeed = speeds.length ? Math.max(...speeds) : 0;
   const avgSpeed = speeds.length ? speeds.reduce((a, b) => a + b, 0) / speeds.length : 0;
+
+  const currentPoint = locations[replayIndex];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -152,61 +226,145 @@ function TripDetailModal({ trip, onClose }: { trip: TripItem; onClose: () => voi
         </div>
 
         <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
-          {/* Map */}
-          <div className="flex-1 min-h-[300px] relative">
-            {isLoading ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-800">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-sm text-gray-500">Loading route data…</p>
+          {/* Map & Replay Controls */}
+          <div className="flex-1 min-h-[350px] relative flex flex-col">
+            <div className="flex-1 relative">
+              {isLoading ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-800">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
+                    <p className="text-sm text-gray-500">Loading route data…</p>
+                  </div>
                 </div>
-              </div>
-            ) : polyline.length > 0 ? (
-              <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={true}>
-                <TileLayer
-                  url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                  attribution="© CARTO"
-                />
-                {/* Speed-coloured polyline segments */}
-                {locations.slice(1).map((loc, i) => (
-                  <Polyline
-                    key={loc.id}
-                    positions={[
-                      [locations[i].latitude, locations[i].longitude],
-                      [loc.latitude, loc.longitude]
-                    ]}
-                    color={speedColor(loc.speed)}
-                    weight={4}
-                    opacity={0.9}
+              ) : polyline.length > 0 ? (
+                <MapContainer center={center} zoom={13} style={{ height: '100%', width: '100%' }} zoomControl={true}>
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   />
-                ))}
-                {/* Start marker */}
-                {polyline.length > 0 && (
-                  <CircleMarker center={polyline[0]} radius={10} pathOptions={{ color: '#22c55e', fillColor: '#22c55e', fillOpacity: 1 }}>
-                    <Popup>🟢 Trip Start</Popup>
-                  </CircleMarker>
-                )}
-                {/* End marker */}
-                {polyline.length > 1 && (
-                  <CircleMarker center={polyline[polyline.length - 1]} radius={10} pathOptions={{ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 1 }}>
-                    <Popup>🔴 Trip End</Popup>
-                  </CircleMarker>
-                )}
-                
-                {/* School Marker */}
-                <Marker position={[20.0003, 73.7845]} icon={schoolIcon}>
-                  <Popup>
-                    <div className="p-1 text-center">
-                      <p className="font-bold text-sm m-0">Our School</p>
-                      <p className="text-[10px] text-gray-500 m-0">Main Campus</p>
-                    </div>
-                  </Popup>
-                </Marker>
-              </MapContainer>
-            ) : (
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800/50 gap-3">
-                <Navigation className="w-12 h-12 text-gray-300" />
-                <p className="text-sm text-gray-400">No GPS data recorded for this trip</p>
+                  {/* Speed-coloured polyline segments */}
+                  {locations.slice(1).map((loc, i) => (
+                    <Polyline
+                      key={loc.id}
+                      positions={[
+                        [locations[i].latitude, locations[i].longitude],
+                        [loc.latitude, loc.longitude]
+                      ]}
+                      color={speedColor(loc.speed)}
+                      weight={4}
+                      opacity={0.9}
+                    />
+                  ))}
+                  {/* Start marker */}
+                  {polyline.length > 0 && (
+                    <CircleMarker center={polyline[0]} radius={8} pathOptions={{ color: '#22c55e', fillColor: '#22c55e', fillOpacity: 1 }}>
+                      <Popup>🟢 Trip Start</Popup>
+                    </CircleMarker>
+                  )}
+                  {/* End marker */}
+                  {polyline.length > 1 && (
+                    <CircleMarker center={polyline[polyline.length - 1]} radius={8} pathOptions={{ color: '#ef4444', fillColor: '#ef4444', fillOpacity: 1 }}>
+                      <Popup>🔴 Trip End</Popup>
+                    </CircleMarker>
+                  )}
+                  
+                  {/* Replay moving bus marker */}
+                  {currentPoint && (
+                    <Marker position={[currentPoint.latitude, currentPoint.longitude]} icon={replayBusIcon}>
+                      <Popup>
+                        <div className="p-1 text-center text-xs">
+                          <p className="font-bold m-0">🚌 Bus Replay</p>
+                          <p className="m-0 text-gray-500">Speed: {currentPoint.speed} km/h</p>
+                          <p className="m-0 text-[10px] text-gray-400">{formatTime(currentPoint.recorded_at)}</p>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  )}
+
+                  {/* School Marker */}
+                  <Marker position={[20.0003, 73.7845]} icon={schoolIcon}>
+                    <Popup>
+                      <div className="p-1 text-center">
+                        <p className="font-bold text-sm m-0">Our School</p>
+                        <p className="text-[10px] text-gray-500 m-0">Main Campus</p>
+                      </div>
+                    </Popup>
+                  </Marker>
+                </MapContainer>
+              ) : (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800/50 gap-3">
+                  <Navigation className="w-12 h-12 text-gray-300" />
+                  <p className="text-sm text-gray-400">No GPS data recorded for this trip</p>
+                </div>
+              )}
+            </div>
+
+            {/* Interactive Replay Player Bar */}
+            {locations.length > 0 && (
+              <div className="p-3 bg-gray-900 text-white flex flex-col gap-2 border-t border-gray-800">
+                <div className="flex items-center gap-3">
+                  {/* Play / Pause button */}
+                  <button
+                    onClick={() => {
+                      if (replayIndex >= locations.length - 1) {
+                        setReplayIndex(0);
+                      }
+                      setIsPlaying(!isPlaying);
+                    }}
+                    className="p-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white transition-colors"
+                  >
+                    {isPlaying ? <Pause className="w-4 h-4 fill-white" /> : <Play className="w-4 h-4 fill-white" />}
+                  </button>
+
+                  {/* Reset button */}
+                  <button
+                    onClick={() => {
+                      setIsPlaying(false);
+                      setReplayIndex(0);
+                    }}
+                    className="p-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 transition-colors"
+                    title="Restart Replay"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+
+                  {/* Timeline scrubber slider */}
+                  <input
+                    type="range"
+                    min={0}
+                    max={locations.length - 1}
+                    value={replayIndex}
+                    onChange={(e) => setReplayIndex(Number(e.target.value))}
+                    className="flex-1 accent-brand-500 cursor-pointer h-2 bg-gray-700 rounded-lg"
+                  />
+
+                  {/* Playback speed buttons */}
+                  <div className="flex items-center gap-1 bg-gray-800 p-1 rounded-xl">
+                    {[1, 2, 5, 10].map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setSpeedMultiplier(s)}
+                        className={`px-2 py-0.5 text-xs font-semibold rounded-lg transition-colors ${
+                          speedMultiplier === s
+                            ? 'bg-brand-500 text-white'
+                            : 'text-gray-400 hover:text-white'
+                        }`}
+                      >
+                        {s}x
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Progress metadata */}
+                <div className="flex items-center justify-between text-xs text-gray-400 px-1">
+                  <span>GPS Point {replayIndex + 1} / {locations.length}</span>
+                  {currentPoint && (
+                    <span>
+                      Time: {formatTime(currentPoint.recorded_at)} · Speed: {currentPoint.speed} km/h
+                    </span>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -224,7 +382,7 @@ function TripDetailModal({ trip, onClose }: { trip: TripItem; onClose: () => voi
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { label: 'Duration', value: formatDuration(trip.started_at, trip.ended_at), icon: Clock, color: 'text-blue-500' },
-                  { label: 'Distance', value: `${trip.distance_km.toFixed(1)} km`, icon: Route, color: 'text-purple-500' },
+                  { label: 'Distance', value: `${distanceKm.toFixed(1)} km`, icon: Route, color: 'text-purple-500' },
                   { label: 'Max Speed', value: `${maxSpeed.toFixed(0)} km/h`, icon: Gauge, color: 'text-red-500' },
                   { label: 'Avg Speed', value: `${avgSpeed.toFixed(0)} km/h`, icon: TrendingUp, color: 'text-emerald-500' },
                   { label: 'GPS Points', value: String(locations.length), icon: MapPin, color: 'text-orange-500' },
