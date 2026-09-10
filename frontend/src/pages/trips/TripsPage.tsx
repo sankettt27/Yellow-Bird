@@ -8,7 +8,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   MapPin, Clock, Gauge, Route, Bus, User, ChevronRight,
-  CheckCircle, AlertCircle, Play, Filter, Search, X, Navigation,
+  CheckCircle, AlertCircle, Play, Pause, RotateCcw, Filter, Search, X, Navigation,
   TrendingUp, Calendar, Activity
 } from 'lucide-react';
 import { MapContainer, TileLayer, Polyline, CircleMarker, Popup, Marker } from 'react-leaflet';
