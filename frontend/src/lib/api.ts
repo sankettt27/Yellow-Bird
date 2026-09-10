@@ -9,16 +9,10 @@ import axios from 'axios';
  * Set VITE_API_URL in .env to your localtunnel or server URL when building APK.
  */
 
-// Detect if running in native app (Capacitor/APK) vs browser web mode
-const isNative = typeof window !== 'undefined' && (
-  window.location.protocol === 'file:' ||
-  window.location.protocol === 'capacitor:' ||
-  Boolean((window as any).Capacitor?.isNativePlatform?.())
-);
-
-// Native APK requires absolute VITE_API_URL; Browser dev mode uses relative '/api/v1' via Vite proxy
-const BASE_URL = isNative
-  ? (import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api/v1` : 'http://localhost:8000/api/v1')
+// Use VITE_API_URL if configured, or default to production Render URL when built for web, or relative '/api/v1' for local dev
+const rawApiUrl = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://yellow-bird.onrender.com' : '');
+const BASE_URL = rawApiUrl
+  ? `${rawApiUrl.replace(/\/$/, '')}/api/v1`
   : '/api/v1';
 
 const api = axios.create({

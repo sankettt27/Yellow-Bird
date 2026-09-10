@@ -11,17 +11,10 @@ import { useAuthStore } from '@/stores/authStore';
  * - In native APK: uses VITE_API_URL env var (set to your localtunnel/server URL)
  */
 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+const rawApiUrl = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://yellow-bird.onrender.com' : '');
 
-const isNative = typeof window !== 'undefined' && (
-  window.location.protocol === 'file:' ||
-  window.location.protocol === 'capacitor:' ||
-  Boolean((window as any).Capacitor?.isNativePlatform?.())
-);
-
-const WS_BASE_URL = isNative
-  ? (import.meta.env.VITE_API_URL
-      ? import.meta.env.VITE_API_URL.replace(/^http/, 'ws') + '/api/v1'
-      : 'ws://localhost:8000/api/v1')
+const WS_BASE_URL = rawApiUrl
+  ? rawApiUrl.replace(/^http/, 'ws').replace(/\/$/, '') + '/api/v1'
   : `${protocol}//${window.location.host}/api/v1`;
 
 export class WebSocketManager {
