@@ -119,6 +119,21 @@ export function TrackingPage() {
   const [updateCount, setUpdateCount] = useState(0);
   const mapRef = useRef<L.Map | null>(null);
 
+  // Fetch school coordinates from admin settings
+  const { data: settingsData } = useQuery({
+    queryKey: ['admin-settings'],
+    queryFn: async () => {
+      const res = await api.get('/settings');
+      return res.data;
+    },
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+  });
+  const schoolCoords: [number, number] = [
+    settingsData?.school?.latitude ?? 20.0003,
+    settingsData?.school?.longitude ?? 73.7845,
+  ];
+  const schoolName = settingsData?.school?.name ?? 'Our School';
+
   const { data: busesData } = useQuery({
     queryKey: ['buses-all'],
     queryFn: async () => {
@@ -357,23 +372,23 @@ export function TrackingPage() {
         {/* ── Map ── */}
         <div className="flex-1 bg-white dark:bg-gray-800 rounded-3xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden relative">
           <MapContainer
-            center={[20.0003, 73.7845]}
+            center={schoolCoords}
             zoom={12}
             style={{ height: '100%', width: '100%' }}
             zoomControl={false}
             ref={mapRef}
           >
             <TileLayer
-              attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             <MapCenterController locations={locations} />
 
-            {/* School Marker */}
-            <Marker position={[20.0003, 73.7845]} icon={schoolIcon}>
+            {/* School Marker — dynamic coordinates from admin settings */}
+            <Marker position={schoolCoords} icon={schoolIcon}>
               <Popup className="bus-popup">
                 <div className="p-1 text-center">
-                  <p className="font-bold text-sm m-0">Our School</p>
+                  <p className="font-bold text-sm m-0">{schoolName}</p>
                   <p className="text-[10px] text-gray-500 m-0">Main Campus</p>
                 </div>
               </Popup>

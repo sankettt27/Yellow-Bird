@@ -92,6 +92,8 @@ export function SettingsPage() {
       const res = await api.put('/settings', payload);
       return res.data;
     },
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
     onSuccess: () => {
       toast.success('Admin Portal settings updated and saved successfully!');
       queryClient.invalidateQueries({ queryKey: ['admin-settings'] });
@@ -105,7 +107,7 @@ export function SettingsPage() {
       } else if (Array.isArray(detail)) {
         message = detail.map((d: any) => `${d.loc?.[d.loc.length - 1] || 'field'}: ${d.msg}`).join(', ');
       } else if (err.message && !err.response) {
-        message = `Network error: ${err.message}. Please verify the backend is running.`;
+        message = `Network error: ${err.message}. The server may be waking up — please try again in a few seconds.`;
       }
       toast.error(message);
     },

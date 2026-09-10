@@ -155,11 +155,26 @@ function TripDetailModal({ trip, onClose }: { trip: TripItem; onClose: () => voi
     },
   });
 
+  // Fetch school coordinates from admin settings (cached by react-query)
+  const { data: settingsData } = useQuery({
+    queryKey: ['admin-settings'],
+    queryFn: async () => {
+      const res = await api.get('/settings');
+      return res.data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+  const schoolCoords: [number, number] = [
+    settingsData?.school?.latitude ?? 20.0003,
+    settingsData?.school?.longitude ?? 73.7845,
+  ];
+  const schoolName = settingsData?.school?.name ?? 'Our School';
+
   const locations = data?.locations ?? [];
   const polyline = locations.map(l => [l.latitude, l.longitude] as [number, number]);
   const center: [number, number] = polyline.length > 0
     ? polyline[Math.floor(polyline.length / 2)]
-    : [20.0003, 73.7845];
+    : schoolCoords;
 
   // Replay state
   const [isPlaying, setIsPlaying] = useState(false);
@@ -281,11 +296,11 @@ function TripDetailModal({ trip, onClose }: { trip: TripItem; onClose: () => voi
                     </Marker>
                   )}
 
-                  {/* School Marker */}
-                  <Marker position={[20.0003, 73.7845]} icon={schoolIcon}>
+                  {/* School Marker — dynamic coordinates from admin settings */}
+                  <Marker position={schoolCoords} icon={schoolIcon}>
                     <Popup>
                       <div className="p-1 text-center">
-                        <p className="font-bold text-sm m-0">Our School</p>
+                        <p className="font-bold text-sm m-0">{schoolName}</p>
                         <p className="text-[10px] text-gray-500 m-0">Main Campus</p>
                       </div>
                     </Popup>
