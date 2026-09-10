@@ -7,7 +7,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Bus, Users, GraduationCap, MapPin, Route,
-  Navigation, Bell, BarChart3, Settings, School, ChevronLeft,
+  Navigation, BarChart3, Settings, School, ChevronLeft,
   ChevronRight, UserCog, History,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -33,7 +33,6 @@ const navItems: NavItem[] = [
   { label: 'Bus Stops', icon: MapPin, path: '/admin/stops', roles: [ROLES.SUPER_ADMIN, ROLES.SCHOOL_ADMIN] },
   { label: 'Live Tracking', icon: Navigation, path: '/admin/tracking', roles: [ROLES.SUPER_ADMIN, ROLES.SCHOOL_ADMIN] },
   { label: 'Trips', icon: History, path: '/admin/trips', roles: [ROLES.SUPER_ADMIN, ROLES.SCHOOL_ADMIN] },
-  { label: 'Notifications', icon: Bell, path: '/admin/notifications', roles: [ROLES.SUPER_ADMIN, ROLES.SCHOOL_ADMIN] },
   { label: 'Reports', icon: BarChart3, path: '/admin/reports', roles: [ROLES.SUPER_ADMIN, ROLES.SCHOOL_ADMIN] },
   { label: 'Settings', icon: Settings, path: '/admin/settings', roles: [ROLES.SUPER_ADMIN, ROLES.SCHOOL_ADMIN] },
 ];
