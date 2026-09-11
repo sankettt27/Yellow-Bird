@@ -8,10 +8,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.core.database import get_db
 from app.core.config import get_settings
-from app.api.deps import get_current_user, require_role
+from app.api.deps import get_current_user, require_role, require_school_admin
 from app.models.user import User
 from app.models.school import School
 from app.models.enums import UserRole
@@ -144,7 +145,7 @@ async def _get_or_find_school(db: AsyncSession, current_user: User) -> School:
 @router.get("")
 async def get_admin_settings(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN])),
+    current_user: User = Depends(require_school_admin),
 ):
     """
     Fetch complete settings for the Admin Portal (persisted in DB).
@@ -199,7 +200,7 @@ async def get_admin_settings(
 async def update_admin_settings(
     payload: FullAdminSettingsUpdateSchema,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN])),
+    current_user: User = Depends(require_school_admin),
 ):
     """
     Update Admin Portal settings and persist to database.
@@ -246,6 +247,7 @@ async def update_admin_settings(
 
     # Assign updated dictionary back to school.settings for SQLAlchemy JSON tracking
     school.settings = dict(current_school_settings)
+    flag_modified(school, "settings")
 
     await db.commit()
     await db.refresh(school)

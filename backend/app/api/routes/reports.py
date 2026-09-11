@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, desc, or_, and_
 
 from app.core.database import get_db
-from app.api.deps import get_current_user, require_role
+from app.api.deps import get_current_user, require_role, require_school_admin
 from app.models.user import User
 from app.models.bus import Bus
 from app.models.driver import Driver
@@ -28,7 +28,7 @@ router = APIRouter(prefix="/reports", tags=["Reports"])
 @router.get("/summary")
 async def get_reports_summary(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN])),
+    current_user: User = Depends(require_school_admin),
 ):
     """
     Get top-level KPI summary metrics for the reports dashboard.
@@ -96,7 +96,7 @@ async def get_reports_summary(
 async def get_analytics_trends(
     days: int = Query(default=7, ge=1, le=90),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN])),
+    current_user: User = Depends(require_school_admin),
 ):
     """
     Get daily trend time-series data for line/area charts (Distance, Trips, Speed Breaches).
@@ -157,7 +157,7 @@ async def get_analytics_trends(
 @router.get("/services/fleet")
 async def get_fleet_service_report(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN])),
+    current_user: User = Depends(require_school_admin),
 ):
     """
     Multi-service report: Bus Fleet Utilization, Mileage, and Status breakdown.
@@ -212,7 +212,7 @@ async def get_fleet_service_report(
 @router.get("/services/drivers")
 async def get_driver_service_report(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN])),
+    current_user: User = Depends(require_school_admin),
 ):
     """
     Multi-service report: Driver shifts, trips count, km covered, and safety score.
@@ -263,7 +263,7 @@ async def get_driver_service_report(
 @router.get("/services/routes")
 async def get_route_service_report(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN])),
+    current_user: User = Depends(require_school_admin),
 ):
     """
     Multi-service report: Route coverage, distance, estimated vs actual duration.
@@ -300,7 +300,7 @@ async def get_route_service_report(
 @router.get("/services/students")
 async def get_student_transport_service_report(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN])),
+    current_user: User = Depends(require_school_admin),
 ):
     """
     Multi-service report: Student transport enrollment, stop coverage, and notification delivery stats.
@@ -332,7 +332,7 @@ async def get_student_transport_service_report(
 async def export_report_csv(
     service: str = Query(default="trips", pattern="^(trips|drivers|buses|routes)$"),
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role([UserRole.SUPER_ADMIN, UserRole.SCHOOL_ADMIN])),
+    current_user: User = Depends(require_school_admin),
 ):
     """
     Download a formatted CSV report for offline spreadsheet analysis.

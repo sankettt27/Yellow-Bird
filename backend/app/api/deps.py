@@ -63,13 +63,20 @@ async def get_current_user(
     return user
 
 
-def require_role(*roles: UserRole):
-    """Dependency factory that restricts access to specified roles."""
+def require_role(*roles: UserRole | list | tuple):
+    """Dependency factory that restricts access to specified roles (supports both varargs and lists/tuples)."""
+    allowed_roles: set[UserRole] = set()
+    for r in roles:
+        if isinstance(r, (list, tuple, set)):
+            allowed_roles.update(r)
+        else:
+            allowed_roles.add(r)
+
     async def role_checker(current_user: User = Depends(get_current_user)) -> User:
-        if current_user.role not in roles:
+        if current_user.role not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Access denied. Required role(s): {', '.join(r.value for r in roles)}",
+                detail=f"Access denied. Required role(s): {', '.join(r.value for r in allowed_roles)}",
             )
         return current_user
     return role_checker
