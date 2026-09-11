@@ -19,6 +19,7 @@ interface AuthState {
   error: string | null;
 
   login: (credentials: LoginRequest) => Promise<void>;
+  loginWithPhone: (phoneData: { phone: string; firebase_token?: string }) => Promise<void>;
   logout: () => void;
   loadFromStorage: () => void;
   clearError: () => void;
@@ -84,6 +85,37 @@ export const useAuthStore = create<AuthState>((set) => ({
         message = 'Cannot connect to server. Please make sure the backend is running.';
       } else {
         message = err.response?.data?.detail || 'Invalid email or password.';
+      }
+      set({ isLoading: false, error: message });
+      toast.error(message);
+      throw new Error(message);
+    }
+  },
+
+  loginWithPhone: async (phoneData: { phone: string; firebase_token?: string }) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.post<TokenResponse>('/auth/phone-login', phoneData);
+      const { access_token, user } = response.data;
+
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('user', JSON.stringify(user));
+      sessionStorage.removeItem('access_token');
+      sessionStorage.removeItem('user');
+
+      set({
+        user,
+        token: access_token,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+      });
+    } catch (err: any) {
+      let message: string;
+      if (!err.response) {
+        message = 'Cannot connect to server. Please make sure the backend is running.';
+      } else {
+        message = err.response?.data?.detail || 'Failed to authenticate phone number.';
       }
       set({ isLoading: false, error: message });
       toast.error(message);

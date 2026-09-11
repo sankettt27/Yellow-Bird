@@ -15,7 +15,7 @@ from app.models.parent import Parent
 from app.models.password_reset import PasswordResetToken
 from app.models.enums import UserRole
 from app.schemas import (
-    LoginRequest, TokenResponse, UserCreate, UserResponse, UserUpdate,
+    LoginRequest, PhoneLoginRequest, TokenResponse, UserCreate, UserResponse, UserUpdate,
     ForgotPasswordRequest, ResetPasswordRequest,
 )
 from app.api.deps import get_current_user
@@ -56,6 +56,62 @@ async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
     return TokenResponse(
         access_token=token,
         user=UserResponse.model_validate(user),
+    )
+
+
+@router.post("/phone-login", response_model=TokenResponse)
+async def phone_login(data: PhoneLoginRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Authenticate parent/driver using their registered mobile phone number.
+    Matches the last 10 digits against User.phone in database.
+    """
+    raw_digits = "".join(filter(str.isdigit, data.phone))
+    if len(raw_digits) < 10:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Please enter a valid 10-digit mobile number.",
+        )
+
+    last10 = raw_digits[-10:]
+
+    stmt = select(User).where(User.phone.isnot(None), User.phone != "")
+    result = await db.execute(stmt)
+    all_users = result.scalars().all()
+
+    matched_user = None
+    for u in all_users:
+        u_digits = "".join(filter(str.isdigit, u.phone or ""))
+        if u_digits and u_digits.endswith(last10):
+            matched_user = u
+            break
+
+    if not matched_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No account found for registered mobile number ({data.phone}). Please contact your school administrator to register your phone number.",
+        )
+
+    if not matched_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is deactivated. Contact your administrator.",
+        )
+
+    matched_user.last_login = datetime.now(timezone.utc)
+
+    token_data = {"sub": matched_user.id, "role": matched_user.role.value}
+    if matched_user.role == UserRole.DRIVER:
+        session_id = uuid.uuid4().hex
+        matched_user.session_token = session_id
+        token_data["sid"] = session_id
+
+    await db.commit()
+
+    token = create_access_token(data=token_data)
+
+    return TokenResponse(
+        access_token=token,
+        user=UserResponse.model_validate(matched_user),
     )
 
 

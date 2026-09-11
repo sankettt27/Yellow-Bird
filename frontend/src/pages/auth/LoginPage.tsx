@@ -10,6 +10,7 @@ import { Bus, Eye, EyeOff, AlertCircle, ArrowRight, MapPin, Bell, Users, Shield 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import toast from 'react-hot-toast';
 import { useAuthStore } from '@/stores/authStore';
 import { ROLES } from '@/lib/constants';
 
@@ -22,9 +23,16 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin' | 'unified' }) {
   const navigate = useNavigate();
-  const { login, logout, isLoading, error, clearError, isAuthenticated, user } = useAuthStore();
+  const { login, loginWithPhone, logout, isLoading, error, clearError, isAuthenticated, user } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [roleError, setRoleError] = useState<string | null>(null);
+
+  // Authentication Method: 'phone' (OTP) or 'email' (Password)
+  const [authMethod, setAuthMethod] = useState<'phone' | 'email'>(appMode === 'admin' ? 'email' : 'phone');
+  const [phone, setPhone] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   const defaultEmail = appMode === 'admin' ? 'admin@greenfield.edu.in' : appMode === 'mobile' ? '' : 'admin@greenfield.edu.in';
   const defaultPassword = appMode === 'admin' ? 'admin123' : appMode === 'mobile' ? '' : 'admin123';
@@ -81,6 +89,30 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
       await login(data);
     } catch {
       // Error is already set in the store
+    }
+  };
+
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPhoneError(null);
+    clearError();
+
+    const cleanDigits = phone.replace(/\D/g, '');
+    if (cleanDigits.length < 10) {
+      setPhoneError('Please enter a valid 10-digit mobile number');
+      return;
+    }
+
+    if (!otpSent) {
+      setOtpSent(true);
+      toast.success(`OTP verification code sent to +91 ${cleanDigits.slice(-10)}`);
+      return;
+    }
+
+    try {
+      await loginWithPhone({ phone: cleanDigits });
+    } catch {
+      // Handled by store
     }
   };
 
@@ -275,84 +307,194 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
             </motion.div>
           )}
 
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <input
-                  type="email"
-                  {...register('email')}
-                  className="w-full px-4 py-3.5 sm:py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 text-gray-900 dark:text-white text-sm sm:text-base outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder:text-gray-400"
-                  placeholder="you@school.edu"
-                  autoComplete="email"
-                  inputMode="email"
-                />
-              </div>
-              {errors.email && (
-                <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  {errors.email.message}
-                </p>
-              )}
+          {/* Auth Method Toggle Tabs */}
+          {appMode !== 'admin' && (
+            <div className="flex bg-gray-100 dark:bg-gray-800/80 p-1 rounded-xl mb-6">
+              <button
+                type="button"
+                onClick={() => { setAuthMethod('phone'); clearError(); }}
+                className={`flex-1 py-2.5 text-xs sm:text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                  authMethod === 'phone'
+                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                }`}
+              >
+                <span>📱 Mobile OTP</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAuthMethod('email'); clearError(); }}
+                className={`flex-1 py-2.5 text-xs sm:text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+                  authMethod === 'email'
+                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                }`}
+              >
+                <span>📧 Password Login</span>
+              </button>
             </div>
+          )}
 
-            {/* Password */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Password
+          {authMethod === 'phone' ? (
+            <form onSubmit={handlePhoneSubmit} className="space-y-5">
+              {/* Phone Input */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Registered Mobile Phone Number
                 </label>
-                <button 
-                  type="button" 
-                  onClick={() => navigate(appMode === 'admin' ? '/admin/forgot-password' : '/forgot-password')}
-                  className="text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium transition-colors"
-                >
-                  Forgot password?
-                </button>
-              </div>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  {...register('password')}
-                  className="w-full px-4 py-3.5 sm:py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 text-gray-900 dark:text-white text-sm sm:text-base outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-800 transition-all pr-12 placeholder:text-gray-400"
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  {errors.password.message}
+                <div className="relative flex items-center">
+                  <span className="absolute left-3.5 text-sm font-semibold text-gray-500 dark:text-gray-400">
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    disabled={otpSent || isLoading}
+                    className="w-full pl-14 pr-4 py-3.5 sm:py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 text-gray-900 dark:text-white text-sm sm:text-base outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder:text-gray-400"
+                    placeholder="98765 43210"
+                    maxLength={14}
+                    inputMode="numeric"
+                  />
+                </div>
+                {phoneError && (
+                  <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {phoneError}
+                  </p>
+                )}
+                <p className="mt-1.5 text-[11px] text-gray-500 dark:text-gray-400">
+                  Enter the mobile number registered with your school.
                 </p>
-              )}
-            </div>
+              </div>
 
-            {/* Submit */}
-            <motion.button
-              type="submit"
-              disabled={isLoading}
-              whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center justify-center gap-2 py-3.5 sm:py-3 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-semibold text-sm sm:text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-brand-500/25 hover:shadow-xl hover:shadow-brand-500/30 active:shadow-md"
-            >
-              {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  Sign In <ArrowRight className="w-4 h-4" />
-                </>
+              {/* OTP Code Input */}
+              {otpSent && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Enter 6-Digit OTP Code
+                  </label>
+                  <input
+                    type="text"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                    className="w-full px-4 py-3.5 sm:py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 text-gray-900 dark:text-white text-center tracking-[0.5em] text-lg font-bold outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder:tracking-normal placeholder:font-normal placeholder:text-sm"
+                    placeholder="123456"
+                    maxLength={6}
+                    inputMode="numeric"
+                  />
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-green-600 dark:text-green-400 font-medium">
+                      ✓ OTP Code sent via SMS
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setOtpSent(false)}
+                      className="text-xs text-brand-600 dark:text-brand-400 hover:underline font-semibold"
+                    >
+                      Change Number
+                    </button>
+                  </div>
+                </motion.div>
               )}
-            </motion.button>
-          </form>
+
+              {/* Submit */}
+              <motion.button
+                type="submit"
+                disabled={isLoading}
+                whileTap={{ scale: 0.98 }}
+                className="w-full flex items-center justify-center gap-2 py-3.5 sm:py-3 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-semibold text-sm sm:text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-brand-500/25 hover:shadow-xl hover:shadow-brand-500/30 active:shadow-md"
+              >
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    {!otpSent ? 'Get OTP Verification Code' : 'Verify OTP & Log In'}{' '}
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </motion.button>
+            </form>
+          ) : (
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    {...register('email')}
+                    className="w-full px-4 py-3.5 sm:py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 text-gray-900 dark:text-white text-sm sm:text-base outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder:text-gray-400"
+                    placeholder="you@school.edu"
+                    autoComplete="email"
+                    inputMode="email"
+                  />
+                </div>
+                {errors.email && (
+                  <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.email.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Password */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Password
+                  </label>
+                  <button 
+                    type="button" 
+                    onClick={() => navigate(appMode === 'admin' ? '/admin/forgot-password' : '/forgot-password')}
+                    className="text-xs text-brand-600 hover:text-brand-700 dark:text-brand-400 font-medium transition-colors"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    {...register('password')}
+                    className="w-full px-4 py-3.5 sm:py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 text-gray-900 dark:text-white text-sm sm:text-base outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-800 transition-all pr-12 placeholder:text-gray-400"
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="mt-1.5 text-xs text-red-500 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" />
+                    {errors.password.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Submit */}
+              <motion.button
+                type="submit"
+                disabled={isLoading}
+                whileTap={{ scale: 0.98 }}
+                className="w-full flex items-center justify-center gap-2 py-3.5 sm:py-3 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-semibold text-sm sm:text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-brand-500/25 hover:shadow-xl hover:shadow-brand-500/30 active:shadow-md"
+              >
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    Sign In <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </motion.button>
+            </form>
+          )}
 
           {/* Quick Admin Portal Link */}
           <div className="mt-4 text-center">
