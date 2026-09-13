@@ -19,6 +19,15 @@ class PhoneLoginRequest(BaseModel):
     otp_code: str | None = None
 
 
+class SendOTPRequest(BaseModel):
+    phone: str
+
+
+class VerifyOTPRequest(BaseModel):
+    phone: str
+    otp_code: str
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"

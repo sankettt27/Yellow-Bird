@@ -20,6 +20,8 @@ interface AuthState {
 
   login: (credentials: LoginRequest) => Promise<void>;
   loginWithPhone: (phoneData: { phone: string; firebase_token?: string }) => Promise<void>;
+  sendOtp: (phone: string) => Promise<void>;
+  verifyOtp: (phone: string, otpCode: string) => Promise<void>;
   logout: () => void;
   loadFromStorage: () => void;
   clearError: () => void;
@@ -113,9 +115,58 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (err: any) {
       let message: string;
       if (!err.response) {
-        message = 'Cannot connect to server. Please make sure the backend is running.';
+        message = 'Cannot connect to server. Please check your internet connection.';
       } else {
-        message = err.response?.data?.detail || 'Failed to authenticate phone number.';
+        message = err.response?.data?.detail || 'No account found for this registered phone number.';
+      }
+      set({ isLoading: false, error: message });
+      toast.error(message);
+      throw new Error(message);
+    }
+  },
+
+  sendOtp: async (phone: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      await api.post('/auth/send-otp', { phone });
+      set({ isLoading: false, error: null });
+    } catch (err: any) {
+      let message: string;
+      if (!err.response) {
+        message = 'Cannot connect to server. Please check your internet connection.';
+      } else {
+        message = err.response?.data?.detail || 'Failed to send OTP code.';
+      }
+      set({ isLoading: false, error: message });
+      toast.error(message);
+      throw new Error(message);
+    }
+  },
+
+  verifyOtp: async (phone: string, otpCode: string) => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await api.post<TokenResponse>('/auth/verify-otp', { phone, otp_code: otpCode });
+      const { access_token, user } = response.data;
+
+      localStorage.setItem('access_token', access_token);
+      localStorage.setItem('user', JSON.stringify(user));
+      sessionStorage.removeItem('access_token');
+      sessionStorage.removeItem('user');
+
+      set({
+        user,
+        token: access_token,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+      });
+    } catch (err: any) {
+      let message: string;
+      if (!err.response) {
+        message = 'Cannot connect to server. Please check your internet connection.';
+      } else {
+        message = err.response?.data?.detail || 'Invalid 6-digit OTP verification code.';
       }
       set({ isLoading: false, error: message });
       toast.error(message);

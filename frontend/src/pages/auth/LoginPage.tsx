@@ -24,7 +24,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin' | 'unified' }) {
   const navigate = useNavigate();
-  const { login, loginWithPhone, logout, isLoading, error, clearError, isAuthenticated, user } = useAuthStore();
+  const { login, sendOtp, verifyOtp, logout, isLoading, error, clearError, isAuthenticated, user } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [roleError, setRoleError] = useState<string | null>(null);
 
@@ -52,14 +52,12 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      // Role-based redirect depending on which app we're in
       if (appMode === 'mobile') {
         if (user.role === ROLES.DRIVER) {
           navigate('/driver', { replace: true });
         } else if (user.role === ROLES.PARENT) {
           navigate('/parent', { replace: true });
         } else {
-          // Admin tried to login on mobile app
           setRoleError('This app is for Drivers and Parents only. Please use the Admin Portal.');
           logout();
         }
@@ -67,12 +65,10 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
         if (user.role === ROLES.SUPER_ADMIN || user.role === ROLES.SCHOOL_ADMIN) {
           navigate('/admin/dashboard', { replace: true });
         } else {
-          // Driver/Parent tried to login on admin portal
           setRoleError('This portal is for Administrators only. Please use the YellowBird App.');
           logout();
         }
       } else {
-        // Unified (legacy) — redirect based on role
         const redirectPath = user.role === ROLES.DRIVER
           ? '/driver'
           : user.role === ROLES.PARENT
@@ -89,7 +85,7 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
     try {
       await login(data);
     } catch {
-      // Error is already set in the store
+      // Handled by store
     }
   };
 
@@ -125,38 +121,39 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
     if (!otpSent) {
       try {
         setIsSendingOtp(true);
-        const appVerifier = setupRecaptcha();
-        const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
-        setConfirmationResult(confirmation);
+        // Call backend send-otp first (verifies registered phone number)
+        await sendOtp(cleanDigits);
+
+        // Try Firebase SMS
+        try {
+          const appVerifier = setupRecaptcha();
+          const confirmation = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
+          setConfirmationResult(confirmation);
+        } catch (firebaseErr: any) {
+          console.warn('Firebase SMS warning:', firebaseErr);
+        }
+
         setOtpSent(true);
         toast.success(`OTP verification code sent to ${formattedPhone}`);
       } catch (err: any) {
-        console.warn('Firebase SMS error / Fallback triggered:', err);
-        setOtpSent(true);
-        const errMsg = err?.message || '';
-        if (errMsg.includes('quota') || errMsg.includes('captcha') || errMsg.includes('domain')) {
-          toast.error('Firebase SMS limit reached or unverified domain. Please enter verification code or test OTP (123456).');
-        } else {
-          toast.success(`Verification code sent to ${formattedPhone}`);
-        }
+        setPhoneError(err?.message || 'Failed to send OTP code.');
       } finally {
         setIsSendingOtp(false);
       }
       return;
     }
 
+    // Step 2: Verify OTP via Backend & Firebase
     try {
       if (confirmationResult && otpCode) {
-        await confirmationResult.confirm(otpCode);
+        try {
+          await confirmationResult.confirm(otpCode);
+        } catch {}
       }
-      await loginWithPhone({ phone: cleanDigits });
+
+      await verifyOtp(cleanDigits, otpCode);
     } catch (err: any) {
-      // If code verification fails or test OTP used:
-      try {
-        await loginWithPhone({ phone: cleanDigits });
-      } catch (backendErr: any) {
-        setPhoneError(backendErr?.message || 'Invalid OTP code. Please try again.');
-      }
+      setPhoneError(err?.message || 'Invalid 6-digit OTP code. Please try again.');
     }
   };
 
@@ -424,7 +421,7 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value)}
                     className="w-full px-4 py-3.5 sm:py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 text-gray-900 dark:text-white text-center tracking-[0.5em] text-lg font-bold outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder:tracking-normal placeholder:font-normal placeholder:text-sm"
-                    placeholder="123456"
+                    placeholder="Enter 6-digit OTP"
                     maxLength={6}
                     inputMode="numeric"
                   />
