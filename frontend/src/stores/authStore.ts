@@ -20,7 +20,7 @@ interface AuthState {
 
   login: (credentials: LoginRequest) => Promise<void>;
   loginWithPhone: (phoneData: { phone: string; firebase_token?: string }) => Promise<void>;
-  sendOtp: (phone: string) => Promise<void>;
+  sendOtp: (phone: string) => Promise<{ message: string; phone: string; sms_sent: boolean; otp?: string }>;
   verifyOtp: (phone: string, otpCode: string) => Promise<void>;
   logout: () => void;
   loadFromStorage: () => void;
@@ -128,8 +128,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   sendOtp: async (phone: string) => {
     set({ isLoading: true, error: null });
     try {
-      await api.post('/auth/send-otp', { phone });
+      const response = await api.post<{ message: string; phone: string; sms_sent: boolean; otp?: string }>('/auth/send-otp', { phone });
       set({ isLoading: false, error: null });
+      return response.data;
     } catch (err: any) {
       let message: string;
       if (!err.response) {

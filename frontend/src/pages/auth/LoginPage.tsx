@@ -34,6 +34,7 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [demoOtp, setDemoOtp] = useState<string | null>(null);
 
   const defaultEmail = appMode === 'admin' ? 'admin@greenfield.edu.in' : appMode === 'mobile' ? '' : 'admin@greenfield.edu.in';
   const defaultPassword = appMode === 'admin' ? 'admin123' : appMode === 'mobile' ? '' : 'admin123';
@@ -122,7 +123,14 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
       try {
         setIsSendingOtp(true);
         // Call backend send-otp first (verifies registered phone number)
-        await sendOtp(cleanDigits);
+        const res = await sendOtp(cleanDigits);
+        if (res?.otp) {
+          setDemoOtp(res.otp);
+          toast.success(`OTP Code: ${res.otp} (SMS gateway key not set)`, { duration: 8000 });
+        } else {
+          setDemoOtp(null);
+          toast.success(`OTP verification code sent to ${formattedPhone}`);
+        }
 
         // Try Firebase SMS
         try {
@@ -134,7 +142,6 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
         }
 
         setOtpSent(true);
-        toast.success(`OTP verification code sent to ${formattedPhone}`);
       } catch (err: any) {
         setPhoneError(err?.message || 'Failed to send OTP code.');
       } finally {
@@ -427,16 +434,28 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
                   />
                   <div className="flex items-center justify-between mt-2">
                     <span className="text-xs text-green-600 dark:text-green-400 font-medium">
-                      ✓ OTP Code sent via SMS
+                      ✓ OTP Code generated
                     </span>
                     <button
                       type="button"
-                      onClick={() => setOtpSent(false)}
+                      onClick={() => { setOtpSent(false); setDemoOtp(null); }}
                       className="text-xs text-brand-600 dark:text-brand-400 hover:underline font-semibold"
                     >
                       Change Number
                     </button>
                   </div>
+                  {demoOtp && (
+                    <div className="mt-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 text-xs text-amber-800 dark:text-amber-300 flex items-center justify-between shadow-xs">
+                      <span>🔑 Demo Mode Code: <strong className="text-sm font-bold tracking-widest text-amber-900 dark:text-amber-100">{demoOtp}</strong></span>
+                      <button
+                        type="button"
+                        onClick={() => setOtpCode(demoOtp)}
+                        className="text-[11px] bg-brand-500 hover:bg-brand-600 text-white font-semibold px-2.5 py-1 rounded-lg transition-all shadow-xs"
+                      >
+                        Auto-fill Code
+                      </button>
+                    </div>
+                  )}
                 </motion.div>
               )}
 

@@ -102,9 +102,10 @@ async def send_otp(data: SendOTPRequest, db: AsyncSession = Depends(get_db)):
     print(f"==================================================")
 
     return {
-        "message": f"OTP verification code sent to +91-{last10}",
+        "message": f"OTP verification code sent to +91-{last10}" if sms_sent else f"OTP verification code generated for +91-{last10}",
         "phone": last10,
-        "sms_sent": sms_sent
+        "sms_sent": sms_sent,
+        "otp": otp_code if not sms_sent else None
     }
 
 
