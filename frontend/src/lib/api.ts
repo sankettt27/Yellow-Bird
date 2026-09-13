@@ -9,11 +9,9 @@ import axios from 'axios';
  * Set VITE_API_URL in .env to your localtunnel or server URL when building APK.
  */
 
-// Use VITE_API_URL if configured, or default to production Render URL when built for web, or relative '/api/v1' for local dev
-const rawApiUrl = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://yellow-bird.onrender.com' : '');
-const BASE_URL = rawApiUrl
-  ? `${rawApiUrl.replace(/\/$/, '')}/api/v1`
-  : '/api/v1';
+// Use VITE_API_URL if configured, or default to production Render URL
+const rawApiUrl = import.meta.env.VITE_API_URL || 'https://yellow-bird.onrender.com';
+const BASE_URL = `${rawApiUrl.replace(/\/$/, '')}/api/v1`;
 
 const api = axios.create({
   baseURL: BASE_URL,

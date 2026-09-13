@@ -574,11 +574,11 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
               </div>
               <div className="flex items-center gap-2 p-2 rounded-lg bg-white/60 dark:bg-gray-700/30">
                 <span className="px-2 py-0.5 rounded-md bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-300 font-semibold text-[10px] uppercase">Driver</span>
-                <span className="truncate">driver1@greenfield.edu.in / driver123</span>
+                <span className="truncate">📱 9175046844 (or driver1@greenfield.edu.in)</span>
               </div>
               <div className="flex items-center gap-2 p-2 rounded-lg bg-white/60 dark:bg-gray-700/30">
                 <span className="px-2 py-0.5 rounded-md bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-semibold text-[10px] uppercase">Parent</span>
-                <span className="truncate">parent1@gmail.com / parent123</span>
+                <span className="truncate">📱 8855822607 (or parent1@gmail.com)</span>
               </div>
             </div>
           </div>
