@@ -75,8 +75,8 @@ async def send_otp(data: SendOTPRequest, db: AsyncSession = Depends(get_db)):
         "expires_at": expires_at
     }
 
-    # Attempt to send real SMS via Fast2SMS / Twilio if API key is provided
-    fast2sms_key = os.getenv("FAST2SMS_API_KEY")
+    # Attempt to send real SMS via Fast2SMS if API key is provided
+    fast2sms_key = os.getenv("FAST2SMS_API_KEY", "6DI1vt3y0UFRhYw4edGcnrEiaMXzmkC9ZT7xNJWQSuqVg2HbBoiWLO8REqKu519oTU6rNJQtb4nl3MSy")
     sms_sent = False
 
     if fast2sms_key:
@@ -92,10 +92,13 @@ async def send_otp(data: SendOTPRequest, db: AsyncSession = Depends(get_db)):
                     },
                     timeout=10.0
                 )
-                if res.status_code == 200:
+                data = res.json()
+                if res.status_code == 200 and data.get("return") is True:
                     sms_sent = True
-        except Exception:
-            pass
+                else:
+                    print(f"Fast2SMS API Notice: {res.status_code} - {data.get('message')}")
+        except Exception as err:
+            print(f"Fast2SMS Network Error: {err}")
 
     print(f"==================================================")
     print(f"📱 REAL OTP GENERATED FOR +91-{last10}: {otp_code}")
