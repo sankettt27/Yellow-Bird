@@ -39,6 +39,23 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !isLoginEndpoint) {
       const detail = error.response?.data?.detail;
 
+      // Only auto-logout if the token is actually invalid/expired
+      // (not on transient network issues — those have no response)
+      const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+      if (token) {
+        // Decode the JWT payload to check expiry without a library
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const nowSec = Math.floor(Date.now() / 1000);
+          if (payload.exp && payload.exp > nowSec) {
+            // Token is still valid — don't log out, just reject this request
+            return Promise.reject(error);
+          }
+        } catch {
+          // Token is malformed — fall through to logout
+        }
+      }
+
       localStorage.removeItem('access_token');
       localStorage.removeItem('user');
       sessionStorage.removeItem('access_token');

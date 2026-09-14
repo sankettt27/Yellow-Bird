@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     # JWT Authentication
     JWT_SECRET_KEY: str = "super-secret-key-change-in-production-2024"
     JWT_ALGORITHM: str = "HS256"
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 480  # 8 hours
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 525600  # 365 days — permanent until manual logout
 
     # CORS
     CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000", "http://localhost", "capacitor://localhost"]
