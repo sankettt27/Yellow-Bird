@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDNZXlgYGIHsLuN3QQA3HBj8qUAll-_HRc",
@@ -11,9 +11,6 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-5NTE1MKRWT"
 };
 
-// Initialize Firebase
+// Initialize Firebase (retained for future features)
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-auth.languageCode = 'en';
-
-export { RecaptchaVerifier, signInWithPhoneNumber, type ConfirmationResult };

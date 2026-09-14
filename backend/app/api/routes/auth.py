@@ -1,6 +1,3 @@
-import os
-import random
-import httpx
 from datetime import datetime, timezone
 import secrets
 import uuid
@@ -18,147 +15,38 @@ from app.models.parent import Parent
 from app.models.password_reset import PasswordResetToken
 from app.models.enums import UserRole
 from app.schemas import (
-    LoginRequest, PhoneLoginRequest, SendOTPRequest, VerifyOTPRequest, TokenResponse, UserCreate, UserResponse, UserUpdate,
+    LoginRequest, TokenResponse, UserCreate, UserResponse, UserUpdate,
     ForgotPasswordRequest, ResetPasswordRequest,
 )
 from app.api.deps import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
-# In-memory OTP storage: phone_10_digits -> {"otp": "482910", "expires_at": timestamp}
-OTP_STORE: dict[str, dict] = {}
 
+@router.post("/login", response_model=TokenResponse)
+async def login(data: LoginRequest, db: AsyncSession = Depends(get_db)):
+    """Authenticate a user with email and password."""
+    result = await db.execute(select(User).where(User.email == data.email))
+    user = result.scalar_one_or_none()
 
-@router.post("/send-otp")
-async def send_otp(data: SendOTPRequest, db: AsyncSession = Depends(get_db)):
-    """
-    Generate a random 6-digit OTP code for a registered phone number and send SMS.
-    """
-    raw_digits = "".join(filter(str.isdigit, data.phone))
-    if len(raw_digits) < 10:
+    if not user or not verify_password(data.password, user.password_hash):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Please enter a valid 10-digit mobile number.",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password. Please check your credentials and try again.",
         )
 
-    last10 = raw_digits[-10:]
-
-    stmt = select(User).where(User.phone.isnot(None), User.phone != "")
-    result = await db.execute(stmt)
-    all_users = result.scalars().all()
-
-    matched_user = None
-    for u in all_users:
-        u_digits = "".join(filter(str.isdigit, u.phone or ""))
-        if u_digits and u_digits.endswith(last10):
-            matched_user = u
-            break
-
-    if not matched_user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"No account found for registered mobile number ({data.phone}). Please contact your school administrator to register your phone number.",
-        )
-
-    if not matched_user.is_active:
+    if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is deactivated. Contact your administrator.",
         )
 
-    # Generate 6-digit OTP
-    otp_code = f"{random.randint(100000, 999999)}"
-    expires_at = datetime.now(timezone.utc).timestamp() + 300  # 5 minutes validity
+    user.last_login = datetime.now(timezone.utc)
 
-    OTP_STORE[last10] = {
-        "otp": otp_code,
-        "expires_at": expires_at
-    }
-
-    # Attempt to send real SMS via Fast2SMS if API key is provided
-    fast2sms_key = os.getenv("FAST2SMS_API_KEY", "6DI1vt3y0UFRhYw4edGcnrEiaMXzmkC9ZT7xNJWQSuqVg2HbBoiWLO8REqKu519oTU6rNJQtb4nl3MSy")
-    sms_sent = False
-
-    if fast2sms_key:
-        try:
-            async with httpx.AsyncClient() as client:
-                res = await client.get(
-                    "https://www.fast2sms.com/dev/bulkV2",
-                    params={
-                        "authorization": fast2sms_key,
-                        "variables_values": otp_code,
-                        "route": "otp",
-                        "numbers": last10
-                    },
-                    timeout=10.0
-                )
-                data = res.json()
-                if res.status_code == 200 and data.get("return") is True:
-                    sms_sent = True
-                else:
-                    print(f"Fast2SMS API Notice: {res.status_code} - {data.get('message')}")
-        except Exception as err:
-            print(f"Fast2SMS Network Error: {err}")
-
-    print(f"==================================================")
-    print(f"📱 REAL OTP GENERATED FOR +91-{last10}: {otp_code}")
-    print(f"==================================================")
-
-    return {
-        "message": f"OTP verification code sent to +91-{last10}" if sms_sent else f"OTP verification code generated for +91-{last10}",
-        "phone": last10,
-        "sms_sent": sms_sent,
-        "otp": otp_code if not sms_sent else None
-    }
-
-
-@router.post("/verify-otp", response_model=TokenResponse)
-async def verify_otp(data: VerifyOTPRequest, db: AsyncSession = Depends(get_db)):
-    """
-    Verify the 6-digit OTP code and authenticate user.
-    """
-    raw_digits = "".join(filter(str.isdigit, data.phone))
-    last10 = raw_digits[-10:]
-
-    otp_info = OTP_STORE.get(last10)
-    current_time = datetime.now(timezone.utc).timestamp()
-
-    if not otp_info or otp_info.get("expires_at", 0) < current_time:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="OTP code has expired or was not requested. Please click 'Get OTP Verification Code' again.",
-        )
-
-    if otp_info.get("otp") != data.otp_code.strip():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid 6-digit OTP code. Please check the code and try again.",
-        )
-
-    # Clear used OTP
-    OTP_STORE.pop(last10, None)
-
-    # Fetch user & perform login
-    stmt = select(User).where(User.phone.isnot(None), User.phone != "")
-    result = await db.execute(stmt)
-    all_users = result.scalars().all()
-
-    matched_user = None
-    for u in all_users:
-        u_digits = "".join(filter(str.isdigit, u.phone or ""))
-        if u_digits and u_digits.endswith(last10):
-            matched_user = u
-            break
-
-    if not matched_user:
-        raise HTTPException(status_code=404, detail="User account not found.")
-
-    matched_user.last_login = datetime.now(timezone.utc)
-
-    token_data = {"sub": matched_user.id, "role": matched_user.role.value}
-    if matched_user.role == UserRole.DRIVER:
+    token_data = {"sub": user.id, "role": user.role.value}
+    if user.role == UserRole.DRIVER:
         session_id = uuid.uuid4().hex
-        matched_user.session_token = session_id
+        user.session_token = session_id
         token_data["sid"] = session_id
 
     await db.commit()
@@ -167,7 +55,7 @@ async def verify_otp(data: VerifyOTPRequest, db: AsyncSession = Depends(get_db))
 
     return TokenResponse(
         access_token=token,
-        user=UserResponse.model_validate(matched_user),
+        user=UserResponse.model_validate(user),
     )
 
 

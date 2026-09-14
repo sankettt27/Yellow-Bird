@@ -13,21 +13,6 @@ class LoginRequest(BaseModel):
     password: str = Field(..., min_length=6)
 
 
-class PhoneLoginRequest(BaseModel):
-    phone: str
-    firebase_token: str | None = None
-    otp_code: str | None = None
-
-
-class SendOTPRequest(BaseModel):
-    phone: str
-
-
-class VerifyOTPRequest(BaseModel):
-    phone: str
-    otp_code: str
-
-
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
