@@ -36,12 +36,12 @@ class Settings(BaseSettings):
     PASSWORD_RESET_EXPIRE_MINUTES: int = 15
     FRONTEND_URL: str = "http://localhost:5173"
 
-    # SMTP Email (leave empty to log reset links to console instead)
-    SMTP_HOST: str = ""
+    # SMTP Email (Gmail SMTP for OTP & Password Reset)
+    SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
-    SMTP_USER: str = ""
-    SMTP_PASSWORD: str = ""
-    SMTP_FROM_EMAIL: str = "noreply@yellowbird.app"
+    SMTP_USER: str = "yellowbird.authentication@gmail.com"
+    SMTP_PASSWORD: str = "fukiqarvuaawtysd"
+    SMTP_FROM_EMAIL: str = "yellowbird.authentication@gmail.com"
 
     model_config = {
         "env_file": "../.env",

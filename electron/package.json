@@ -1,0 +1,49 @@
+{
+  "name": "yellowbird-admin-portal",
+  "version": "1.0.0",
+  "description": "YellowBird School Transport - Dedicated Desktop Admin Portal",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder --win"
+  },
+  "keywords": [
+    "yellowbird",
+    "school-bus",
+    "tracking",
+    "admin-portal",
+    "electron"
+  ],
+  "author": "YellowBird Technologies",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.yellowbird.admin",
+    "productName": "YellowBird Admin Portal",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "../frontend/dist/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "YellowBird Admin Portal"
+    }
+  }
+}

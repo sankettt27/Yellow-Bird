@@ -15,6 +15,8 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 
 // ── Lazy-loaded pages (only downloaded when the user navigates there) ─────────
 const LoginPage           = lazy(() => import('@/pages/auth/LoginPage').then(m => ({ default: m.LoginPage })));
+const RegisterSchoolPage  = lazy(() => import('@/pages/auth/RegisterSchoolPage').then(m => ({ default: m.RegisterSchoolPage })));
+const SchoolSetupWizard   = lazy(() => import('@/pages/auth/SchoolSetupWizard').then(m => ({ default: m.SchoolSetupWizard })));
 const ForgotPasswordPage  = lazy(() => import('@/pages/auth/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
 const ResetPasswordPage   = lazy(() => import('@/pages/auth/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
 const DashboardPage       = lazy(() => import('@/pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
@@ -71,6 +73,10 @@ function App() {
           <Routes>
             {/* Public Routes */}
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register-school" element={<RegisterSchoolPage />} />
+            <Route path="/setup-school" element={<SchoolSetupWizard />} />
+            <Route path="/admin/register" element={<RegisterSchoolPage />} />
+            <Route path="/admin/setup" element={<SchoolSetupWizard />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
 

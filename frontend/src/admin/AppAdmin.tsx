@@ -15,6 +15,8 @@ import { Topbar } from '@/components/layout/Topbar';
 
 // Pages
 import { LoginPage } from '@/pages/auth/LoginPage';
+import { RegisterSchoolPage } from '@/pages/auth/RegisterSchoolPage';
+import { SchoolSetupWizard } from '@/pages/auth/SchoolSetupWizard';
 import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
@@ -148,6 +150,10 @@ export default function AppAdmin() {
         <Routes>
           {/* Public */}
           <Route path="/admin/login" element={<LoginPage appMode="admin" />} />
+          <Route path="/admin/register" element={<RegisterSchoolPage />} />
+          <Route path="/admin/setup" element={<SchoolSetupWizard />} />
+          <Route path="/register-school" element={<RegisterSchoolPage />} />
+          <Route path="/setup-school" element={<SchoolSetupWizard />} />
           <Route path="/admin/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/admin/reset-password" element={<ResetPasswordPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />

@@ -23,6 +23,7 @@ interface AuthState {
   loadFromStorage: () => void;
   clearError: () => void;
   updateUser: (userData: Partial<User>) => void;
+  setSession: (token: string, user: User) => void;
 }
 
 // Synchronously load initial auth state so the DashboardLayout guard
@@ -126,6 +127,20 @@ export const useAuthStore = create<AuthState>((set) => ({
       const updated = { ...state.user, ...userData };
       localStorage.setItem('user', JSON.stringify(updated));
       return { user: updated };
+    });
+  },
+
+  setSession: (token: string, user: User) => {
+    localStorage.setItem('access_token', token);
+    localStorage.setItem('user', JSON.stringify(user));
+    sessionStorage.removeItem('access_token');
+    sessionStorage.removeItem('user');
+    set({
+      user,
+      token,
+      isAuthenticated: true,
+      isLoading: false,
+      error: null,
     });
   },
 }));

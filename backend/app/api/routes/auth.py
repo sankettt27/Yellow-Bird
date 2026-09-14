@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import secrets
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -8,19 +8,24 @@ from sqlalchemy import select
 from app.core.database import get_db
 from app.core.config import get_settings
 from app.core.security import hash_password, verify_password, create_access_token
-from app.core.email import send_password_reset_email
+from app.core.email import send_password_reset_email, send_otp_email
 from app.models.user import User
 from app.models.driver import Driver
 from app.models.parent import Parent
+from app.models.school import School
 from app.models.password_reset import PasswordResetToken
 from app.models.enums import UserRole
 from app.schemas import (
     LoginRequest, TokenResponse, UserCreate, UserResponse, UserUpdate,
     ForgotPasswordRequest, ResetPasswordRequest,
+    SendEmailOTPRequest, VerifyEmailOTPRequest, RegisterSchoolRequest,
 )
 from app.api.deps import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+# In-memory OTP storage for registration: {email: {"code": str, "expires_at": datetime, "attempts": int}}
+EMAIL_OTP_STORE: dict[str, dict] = {}
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -228,4 +233,185 @@ async def reset_password(data: ResetPasswordRequest, db: AsyncSession = Depends(
     await db.flush()
 
     return {"message": "Your password has been reset successfully. You can now sign in with your new password."}
+
+
+# ─── School Self-Registration (New School Admin Onboarding) ───
+
+@router.post("/send-email-otp")
+async def send_registration_email_otp(
+    data: SendEmailOTPRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Send a 6-digit email OTP for new school administrator registration.
+    Verifies that the email is not already taken.
+    """
+    email_clean = data.email.strip().lower()
+
+    if not email_clean or "@" not in email_clean:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Please provide a valid email address.",
+        )
+
+    # Check if user already exists
+    existing = await db.execute(select(User).where(User.email == email_clean))
+    if existing.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="An account with this email already exists. Please sign in instead.",
+        )
+
+    # Clean up expired OTPs
+    now = datetime.now(timezone.utc)
+    expired_keys = [k for k, v in EMAIL_OTP_STORE.items() if now > v.get("expires_at", now)]
+    for k in expired_keys:
+        EMAIL_OTP_STORE.pop(k, None)
+
+    # Generate cryptographically secure 6-digit OTP
+    otp_code = f"{secrets.randbelow(900000) + 100000}"
+    EMAIL_OTP_STORE[email_clean] = {
+        "code": otp_code,
+        "expires_at": now + timedelta(minutes=10),
+        "attempts": 0,
+    }
+
+    # Dispatch email via configured Gmail SMTP
+    sent = await send_otp_email(
+        email=email_clean,
+        otp_code=otp_code,
+        user_name="Administrator",
+    )
+
+    if not sent:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send verification email. Please check your email address and try again.",
+        )
+
+    return {
+        "message": f"A 6-digit verification code has been sent to {email_clean}. Please check your inbox.",
+        "expires_in_minutes": 10,
+    }
+
+
+@router.post("/verify-email-otp")
+async def verify_registration_email_otp(data: VerifyEmailOTPRequest):
+    """
+    Verify if the 6-digit OTP code entered for an email is valid and active.
+    """
+    email_clean = data.email.strip().lower()
+    otp_clean = data.otp_code.strip()
+
+    record = EMAIL_OTP_STORE.get(email_clean)
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No verification code was requested for this email, or it has expired. Please request a new code.",
+        )
+
+    if datetime.now(timezone.utc) > record["expires_at"]:
+        EMAIL_OTP_STORE.pop(email_clean, None)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Verification code has expired. Please request a new code.",
+        )
+
+    record["attempts"] = record.get("attempts", 0) + 1
+    if record["attempts"] > 5:
+        EMAIL_OTP_STORE.pop(email_clean, None)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Too many invalid attempts. Please request a new verification code.",
+        )
+
+    if record["code"] != otp_clean:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid verification code. Please check your inbox and enter the 6-digit code correctly.",
+        )
+
+    return {"valid": True, "message": "Email verified successfully."}
+
+
+@router.post("/register-school", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+async def register_new_school_and_admin(
+    data: RegisterSchoolRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Register a brand-new school and school administrator account using verified Email OTP.
+    Creates a new isolated School record and School Admin User with zero pre-existing data.
+    Auto-logs the new admin in by returning an active 365-day access token.
+    """
+    email_clean = data.email.strip().lower()
+    otp_clean = data.otp_code.strip()
+
+    # Validate OTP
+    record = EMAIL_OTP_STORE.get(email_clean)
+    if not record:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Verification code expired or not found. Please request a new code.",
+        )
+
+    if datetime.now(timezone.utc) > record["expires_at"]:
+        EMAIL_OTP_STORE.pop(email_clean, None)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Verification code expired. Please request a new code.",
+        )
+
+    if record["code"] != otp_clean:
+        record["attempts"] = record.get("attempts", 0) + 1
+        if record["attempts"] > 5:
+            EMAIL_OTP_STORE.pop(email_clean, None)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid verification code. Please verify the code and try again.",
+        )
+
+    # Ensure email is still unique
+    existing = await db.execute(select(User).where(User.email == email_clean))
+    if existing.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="An account with this email already exists. Please sign in instead.",
+        )
+
+    # 1. Create the new school entity
+    school = School(
+        name=data.school_name.strip(),
+        phone=data.phone.strip() if data.phone else None,
+        email=email_clean,
+        is_active=True,
+        settings={"timezone": "Asia/Kolkata"},
+    )
+    db.add(school)
+    await db.flush()
+
+    # 2. Create the school admin user
+    user = User(
+        email=email_clean,
+        password_hash=hash_password(data.password),
+        full_name=data.full_name.strip(),
+        phone=data.phone.strip() if data.phone else None,
+        role=UserRole.SCHOOL_ADMIN,
+        school_id=school.id,
+        is_active=True,
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+
+    # Consume the OTP so it cannot be reused
+    EMAIL_OTP_STORE.pop(email_clean, None)
+
+    # Issue 365-day access token
+    token = create_access_token(data={"sub": user.id, "role": user.role.value})
+
+    return TokenResponse(
+        access_token=token,
+        user=UserResponse.model_validate(user),
+    )
 

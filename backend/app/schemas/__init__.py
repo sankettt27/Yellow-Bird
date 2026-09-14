@@ -473,3 +473,22 @@ class DriverConnectionsResponse(BaseModel):
     route_name: str | None
     students: list[DriverStudentInfo]
 
+
+# ─── School Self-Registration ──────────────────────────────
+class SendEmailOTPRequest(BaseModel):
+    email: str
+
+
+class VerifyEmailOTPRequest(BaseModel):
+    email: str
+    otp_code: str
+
+
+class RegisterSchoolRequest(BaseModel):
+    email: str
+    otp_code: str
+    password: str = Field(..., min_length=6)
+    full_name: str = Field(..., min_length=2, max_length=255)
+    school_name: str = Field(..., min_length=2, max_length=255)
+    phone: str | None = None
+

@@ -159,18 +159,18 @@ async def get_admin_settings(
 
     school_info = {
         "id": school.id if school else "",
-        "name": school.name if school else "Greenfield International School",
-        "address": school.address or "123 Education Boulevard, Sector 42",
-        "city": school.city or "New Delhi",
-        "state": school.state or "Delhi",
+        "name": school.name if school else "",
+        "address": school.address or "",
+        "city": school.city or "",
+        "state": school.state or "",
         "country": school.country if school else "India",
-        "zip_code": school.zip_code or "110042",
-        "phone": school.phone or "+91-11-2345-6789",
-        "email": school.email or "admin@greenfield.edu.in",
-        "website": school.website or "https://greenfield.edu.in",
+        "zip_code": school.zip_code or "",
+        "phone": school.phone or "",
+        "email": school.email or "",
+        "website": school.website or "",
         "timezone": saved_settings.get("timezone", "Asia/Kolkata"),
-        "latitude": school.latitude if (school and school.latitude is not None) else 20.005,
-        "longitude": school.longitude if (school and school.longitude is not None) else 73.785,
+        "latitude": school.latitude if (school and school.latitude is not None) else None,
+        "longitude": school.longitude if (school and school.longitude is not None) else None,
     }
 
     return {

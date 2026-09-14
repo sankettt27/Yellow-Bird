@@ -109,3 +109,111 @@ async def send_password_reset_email(email: str, user_name: str, reset_token: str
         # Fallback to console on send failure
         print(f"\n⚠️  Email send failed. Reset link for {email}: {reset_link}\n")
         return False
+
+
+def _build_otp_email_html(otp_code: str, user_name: str = "School Administrator") -> str:
+    """Build a premium branded HTML email for OTP verification."""
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin:0; padding:0; background-color:#f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc; padding: 40px 16px;">
+            <tr>
+                <td align="center">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:500px; background-color:#ffffff; border-radius:20px; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid #f1f5f9;">
+                        <!-- Header Banner -->
+                        <tr>
+                            <td style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 36px 32px 28px; text-align:center;">
+                                <div style="font-size:36px; line-height:1; margin-bottom:8px;">🚌</div>
+                                <div style="font-size:26px; font-weight:800; color:#ffffff; letter-spacing:-0.5px;">YellowBird</div>
+                                <div style="font-size:13px; color:rgba(255,255,255,0.9); margin-top:4px; font-weight:500;">School Transport & Fleet Management</div>
+                            </td>
+                        </tr>
+                        <!-- Body Content -->
+                        <tr>
+                            <td style="padding: 36px 32px;">
+                                <h2 style="margin:0 0 12px; font-size:22px; font-weight:700; color:#0f172a; text-align:center;">
+                                    Email Verification Code
+                                </h2>
+                                <p style="margin:0 0 24px; font-size:15px; color:#64748b; line-height:1.6; text-align:center;">
+                                    Welcome to YellowBird! Please use the 6-digit verification code below to complete your new school administrator setup.
+                                </p>
+
+                                <!-- OTP Box -->
+                                <div style="margin: 28px 0; padding: 22px 16px; background-color: #fffbeb; border: 2px dashed #f59e0b; border-radius: 16px; text-align: center;">
+                                    <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; color: #b45309; letter-spacing: 1.5px; margin-bottom: 6px;">
+                                        Your 6-Digit Code
+                                    </div>
+                                    <div style="font-size: 38px; font-weight: 800; letter-spacing: 10px; color: #78350f; font-family: monospace, Consolas, sans-serif; padding-left: 10px;">
+                                        {otp_code}
+                                    </div>
+                                </div>
+
+                                <div style="background-color: #f8fafc; border-radius: 12px; padding: 14px 18px; margin-bottom: 24px;">
+                                    <p style="margin: 0; font-size: 13px; color: #475569; line-height: 1.5;">
+                                        ⏱️ <strong>Valid for 10 minutes.</strong> Never share this OTP code with anyone. YellowBird staff will never ask for your code.
+                                    </p>
+                                </div>
+
+                                <p style="margin:0; font-size:13px; color:#94a3b8; line-height:1.5; text-align:center;">
+                                    If you didn't request this code, you can safely ignore this email.
+                                </p>
+
+                                <hr style="margin:28px 0; border:none; border-top:1px solid #f1f5f9;">
+
+                                <div style="text-align:center; font-size:11px; color:#cbd5e1;">
+                                    © 2026 YellowBird Transport Technologies. All rights reserved.
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>
+    """
+
+
+async def send_otp_email(email: str, otp_code: str, user_name: str = "School Administrator") -> bool:
+    """
+    Send a 6-digit OTP verification email for new school admin registration.
+    Uses configured Gmail SMTP credentials.
+    """
+    settings = get_settings()
+
+    # Development fallback if SMTP is explicitly missing
+    if not settings.SMTP_HOST or not settings.SMTP_USER or not settings.SMTP_PASSWORD:
+        logger.warning("=" * 60)
+        logger.warning(f"SMTP not fully configured — OTP for {email}: {otp_code}")
+        logger.warning("=" * 60)
+        print(f"\n🔐 YellowBird OTP for {email}: {otp_code}\n")
+        return True
+
+    # Build the email
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = f"{otp_code} is your YellowBird verification code"
+    msg["From"] = f"YellowBird Authentication <{settings.SMTP_FROM_EMAIL}>"
+    msg["To"] = email
+
+    html_body = _build_otp_email_html(otp_code, user_name)
+    msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+    try:
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=15) as server:
+            server.ehlo()
+            server.starttls()
+            server.ehlo()
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            server.sendmail(settings.SMTP_FROM_EMAIL, [email], msg.as_string())
+        logger.info(f"Verification OTP email sent successfully to {email}")
+        print(f"[OTP] Verification email sent to {email}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send OTP email to {email}: {e}")
+        print(f"[OTP ERROR] Email send failed for {email}: {e}. OTP was: {otp_code}")
+        return False

@@ -351,6 +351,20 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
             </motion.button>
           </form>
 
+          {/* New School Registration Link */}
+          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 text-center">
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+              New School Institution?{' '}
+              <button
+                type="button"
+                onClick={() => navigate(appMode === 'admin' ? '/admin/register' : '/register-school')}
+                className="font-bold text-brand-600 hover:text-brand-700 dark:text-brand-400 hover:underline inline-flex items-center gap-1"
+              >
+                Register New School & Admin →
+              </button>
+            </p>
+          </div>
+
           {/* Quick Admin Portal Link */}
           {appMode !== 'admin' && (
             <div className="mt-4 text-center">
