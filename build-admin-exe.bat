@@ -16,6 +16,11 @@ if %errorlevel% neq 0 (
 )
 
 echo.
+echo Copying frontend dist to electron/dist...
+if not exist "..\electron\dist" mkdir "..\electron\dist"
+xcopy /s /e /y /i dist "..\electron\dist" >nul
+
+echo.
 echo [2/3] Installing electron packaging tools...
 cd ..\electron
 if not exist "node_modules" (

@@ -30,7 +30,7 @@
     "files": [
       "main.js",
       "preload.js",
-      "../frontend/dist/**/*"
+      "dist/**/*"
     ],
     "win": {
       "target": [

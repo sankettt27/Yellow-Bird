@@ -34,7 +34,7 @@ function createWindow() {
   } else {
     mainWindow.loadURL(ADMIN_WEB_URL).catch(() => {
       // Offline fallback: load local frontend dist
-      const localAdminPath = path.join(__dirname, '../frontend/dist/admin.html');
+      const localAdminPath = path.join(__dirname, 'dist', 'admin.html');
       mainWindow.loadFile(localAdminPath);
     });
   }
