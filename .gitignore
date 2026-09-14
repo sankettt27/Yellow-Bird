@@ -16,11 +16,14 @@ ENV/
 # Build Outputs
 dist/
 build/
+dist-electron/
+YellowBird-Admin-Portal/
+*.apk
+*.aab
+*.zip
 android/app/build/
 android/.gradle/
 android/build/
-*.apk
-*.aab
 
 # Database & SQLite
 *.db
