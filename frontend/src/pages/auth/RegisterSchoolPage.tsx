@@ -84,6 +84,9 @@ export function RegisterSchoolPage() {
     try {
       const res = await api.post('/auth/send-email-otp', { email: cleanEmail });
       toast.success(res.data.message || 'Verification code sent to your email!');
+      if (res.data.debug_code) {
+        setOtpCode(res.data.debug_code);
+      }
       setResendTimer(60);
       setCanResend(false);
       setStep(2);

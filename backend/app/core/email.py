@@ -86,17 +86,21 @@ async def send_password_reset_email(email: str, user_name: str, reset_token: str
         print("=" * 60 + "\n")
         return True
 
-    # Build the email
+    html_body = _build_reset_email_html(reset_link, user_name)
+
+    # 1. Try Vercel HTTPS Relay (bypasses Render SMTP port blocking)
+    if await _send_via_vercel_relay(email, "Reset Your YellowBird Password", html_body):
+        return True
+
+    # 2. Try Direct SMTP
     msg = MIMEMultipart("alternative")
     msg["Subject"] = "Reset Your YellowBird Password"
     msg["From"] = settings.SMTP_FROM_EMAIL
     msg["To"] = email
-
-    html_body = _build_reset_email_html(reset_link, user_name)
-    msg.attach(MIMEText(html_body, "html"))
+    msg.attach(MIMEText(html_body, "html", "utf-8"))
 
     try:
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=8) as server:
             server.ehlo()
             server.starttls()
             server.ehlo()
@@ -179,41 +183,76 @@ def _build_otp_email_html(otp_code: str, user_name: str = "School Administrator"
     """
 
 
+async def _send_via_vercel_relay(to: str, subject: str, html_body: str) -> bool:
+    """Attempt sending through Vercel HTTPS serverless relay (bypasses Render free-tier SMTP port blocks)."""
+    try:
+        import httpx
+        async with httpx.AsyncClient(timeout=12.0) as client:
+            res = await client.post(
+                "https://yellow-bird-eosin.vercel.app/api/send-email",
+                json={
+                    "to": to,
+                    "subject": subject,
+                    "html": html_body,
+                    "secret": "yellowbird-auth-secret-2024",
+                },
+                headers={"X-YellowBird-Secret": "yellowbird-auth-secret-2024"},
+            )
+            if res.status_code == 200:
+                print(f"[EMAIL RELAY] Sent successfully via Vercel HTTPS relay to {to}")
+                return True
+            else:
+                print(f"[EMAIL RELAY] Vercel returned status {res.status_code}: {res.text[:150]}")
+    except Exception as e:
+        print(f"[EMAIL RELAY] Vercel relay error: {e}")
+    return False
+
+
 async def send_otp_email(email: str, otp_code: str, user_name: str = "School Administrator") -> bool:
     """
     Send a 6-digit OTP verification email for new school admin registration.
-    Uses configured Gmail SMTP credentials.
+    Tries Vercel HTTPS relay first (for Render cloud), then falls back to direct SMTP SSL/STARTTLS.
     """
     settings = get_settings()
+    html_body = _build_otp_email_html(otp_code, user_name)
+    subject = f"{otp_code} is your YellowBird verification code"
 
-    # Development fallback if SMTP is explicitly missing
-    if not settings.SMTP_HOST or not settings.SMTP_USER or not settings.SMTP_PASSWORD:
-        logger.warning("=" * 60)
-        logger.warning(f"SMTP not fully configured — OTP for {email}: {otp_code}")
-        logger.warning("=" * 60)
-        print(f"\n🔐 YellowBird OTP for {email}: {otp_code}\n")
+    # 1. Try Vercel HTTPS Relay (bypasses Render SMTP port blocking)
+    if await _send_via_vercel_relay(email, subject, html_body):
         return True
 
-    # Build the email
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = f"{otp_code} is your YellowBird verification code"
-    msg["From"] = f"YellowBird Authentication <{settings.SMTP_FROM_EMAIL}>"
-    msg["To"] = email
-
-    html_body = _build_otp_email_html(otp_code, user_name)
-    msg.attach(MIMEText(html_body, "html", "utf-8"))
-
+    # 2. Try Direct SMTP SSL (port 465)
     try:
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=15) as server:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=6) as server:
+            server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = f"YellowBird Authentication <{settings.SMTP_FROM_EMAIL}>"
+            msg["To"] = email
+            msg.attach(MIMEText(html_body, "html", "utf-8"))
+            server.sendmail(settings.SMTP_FROM_EMAIL, [email], msg.as_string())
+        print(f"[OTP] Verification email sent to {email} via SMTP_SSL 465")
+        return True
+    except Exception as e465:
+        print(f"[OTP 465] Error: {e465}")
+
+    # 3. Try Direct SMTP STARTTLS (port 587)
+    try:
+        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT, timeout=6) as server:
             server.ehlo()
             server.starttls()
             server.ehlo()
             server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+            msg = MIMEMultipart("alternative")
+            msg["Subject"] = subject
+            msg["From"] = f"YellowBird Authentication <{settings.SMTP_FROM_EMAIL}>"
+            msg["To"] = email
+            msg.attach(MIMEText(html_body, "html", "utf-8"))
             server.sendmail(settings.SMTP_FROM_EMAIL, [email], msg.as_string())
-        logger.info(f"Verification OTP email sent successfully to {email}")
-        print(f"[OTP] Verification email sent to {email}")
+        print(f"[OTP] Verification email sent to {email} via SMTP 587")
         return True
-    except Exception as e:
-        logger.error(f"Failed to send OTP email to {email}: {e}")
-        print(f"[OTP ERROR] Email send failed for {email}: {e}. OTP was: {otp_code}")
-        return False
+    except Exception as e587:
+        print(f"[OTP 587] Error: {e587}")
+
+    print(f"[OTP FALLBACK] Verification code for {email}: {otp_code}")
+    return False
