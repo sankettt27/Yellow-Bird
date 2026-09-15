@@ -3,10 +3,11 @@
  */
 
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Bus, Users, GraduationCap, Route, Navigation, UserCog,
-  TrendingUp, Activity, MapPin, School, ArrowUpRight,
+  TrendingUp, Activity, MapPin, School, ArrowUpRight, ArrowRight,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { ROLES } from '@/lib/constants';
@@ -23,9 +24,13 @@ interface StatCard {
 }
 
 export function DashboardPage() {
+  const navigate = useNavigate();
   const { user } = useAuthStore();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const isAdminPath = window.location.pathname.startsWith('/admin');
+  const getPath = (route: string) => (isAdminPath ? `/admin${route}` : route);
 
   useEffect(() => {
     fetchStats();
@@ -187,20 +192,67 @@ export function DashboardPage() {
           transition={{ delay: 0.35 }}
           className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-card"
         >
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
-          <div className="space-y-2">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Quick Actions</h3>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-400">
+              Shortcuts
+            </span>
+          </div>
+          <div className="space-y-2.5">
             {[
-              { label: 'Add New Bus', icon: Bus },
-              { label: 'Manage Routes', icon: Route },
-              { label: 'View Live Map', icon: MapPin },
-              { label: 'Manage Drivers', icon: Users },
-            ].map(({ label, icon: QIcon }) => (
+              {
+                label: 'Add New Bus',
+                desc: 'Register a vehicle to your fleet',
+                icon: Bus,
+                color: 'text-amber-600 dark:text-amber-400',
+                bg: 'bg-amber-100 dark:bg-amber-500/20',
+                onClick: () => navigate(getPath('/buses?new=true')),
+              },
+              {
+                label: 'Manage Routes',
+                desc: 'Create, edit and assign routes',
+                icon: Route,
+                color: 'text-blue-600 dark:text-blue-400',
+                bg: 'bg-blue-100 dark:bg-blue-500/20',
+                onClick: () => navigate(getPath('/routes')),
+              },
+              {
+                label: 'View Live Map',
+                desc: 'Monitor real-time GPS locations',
+                icon: MapPin,
+                color: 'text-emerald-600 dark:text-emerald-400',
+                bg: 'bg-emerald-100 dark:bg-emerald-500/20',
+                onClick: () => navigate(getPath('/tracking')),
+              },
+              {
+                label: 'Manage Drivers',
+                desc: 'View & assign school bus drivers',
+                icon: Users,
+                color: 'text-purple-600 dark:text-purple-400',
+                bg: 'bg-purple-100 dark:bg-purple-500/20',
+                onClick: () => navigate(getPath('/drivers')),
+              },
+            ].map(({ label, desc, icon: QIcon, color, bg, onClick }) => (
               <button
                 key={label}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-200 transition-colors text-left"
+                type="button"
+                onClick={onClick}
+                className="w-full flex items-center justify-between p-3 rounded-xl bg-gray-50 dark:bg-gray-700/40 hover:bg-brand-50/70 dark:hover:bg-gray-700 hover:border-brand-200 dark:hover:border-brand-500/30 border border-transparent transition-all group text-left cursor-pointer shadow-sm hover:shadow"
               >
-                <QIcon className="w-4 h-4 text-gray-400" />
-                {label}
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-lg ${bg} flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform`}>
+                    <QIcon className={`w-4 h-4 ${color}`} />
+                  </div>
+                  <div>
+                    <span className="text-sm font-semibold text-gray-800 dark:text-gray-200 block group-hover:text-brand-600 dark:group-hover:text-brand-400 transition-colors">
+                      {label}
+                    </span>
+                    <span className="text-[11px] text-gray-500 dark:text-gray-400 block">
+                      {desc}
+                    </span>
+                  </div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-brand-500 group-hover:translate-x-0.5 transition-all flex-shrink-0 ml-2" />
               </button>
             ))}
           </div>

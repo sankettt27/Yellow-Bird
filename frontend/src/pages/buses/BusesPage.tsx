@@ -3,6 +3,7 @@
  */
 
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
@@ -30,11 +31,14 @@ type BusFormData = z.infer<typeof busSchema>;
 export function BusesPage() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
 
   const [page] = useState(1);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(
+    searchParams.get('new') === 'true' || searchParams.get('action') === 'add'
+  );
   const [editBus, setEditBus] = useState<Bus | null>(null);
 
   const { data, isLoading } = useQuery<PaginatedResponse<Bus>>({

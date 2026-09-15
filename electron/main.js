@@ -11,7 +11,8 @@ let mainWindow = null;
 const isDev = process.env.NODE_ENV === 'development';
 const ADMIN_WEB_URL = process.env.ADMIN_URL || 'https://yellow-bird-eosin.vercel.app/admin';
 
-function createWindow() {
+  const iconPath = path.join(__dirname, 'icon.ico');
+
   mainWindow = new BrowserWindow({
     width: 1366,
     height: 868,
@@ -20,6 +21,7 @@ function createWindow() {
     title: 'YellowBird Admin Portal',
     backgroundColor: '#0f172a',
     show: false,
+    icon: iconPath,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
@@ -80,6 +82,43 @@ function createAppMenu() {
           label: 'Toggle Full Screen',
           accelerator: 'F11',
           click: () => mainWindow && mainWindow.setFullScreen(!mainWindow.isFullScreen()),
+        },
+        { type: 'separator' },
+        {
+          label: 'Create Desktop Shortcut & Add to Start Menu',
+          click: () => {
+            if (process.platform === 'win32') {
+              try {
+                const targetPath = process.execPath;
+                const workingDir = path.dirname(targetPath);
+                const desktopLnk = path.join(app.getPath('desktop'), 'YellowBird Admin Portal.lnk');
+                const startMenuLnk = path.join(app.getPath('appData'), 'Microsoft', 'Windows', 'Start Menu', 'Programs', 'YellowBird Admin Portal.lnk');
+                const iconLocation = path.join(workingDir, 'icon.ico');
+
+                const opts = {
+                  target: targetPath,
+                  cwd: workingDir,
+                  description: 'YellowBird School Transport Fleet Management Admin Portal',
+                  appUserModelId: 'com.yellowbird.admin',
+                  icon: iconLocation,
+                  iconIndex: 0,
+                };
+                shell.writeShortcutLink(desktopLnk, 'create', opts);
+                shell.writeShortcutLink(startMenuLnk, 'create', opts);
+
+                const { dialog } = require('electron');
+                dialog.showMessageBox(mainWindow, {
+                  type: 'info',
+                  title: 'Shortcuts Created',
+                  message: 'YellowBird Admin shortcuts created successfully!',
+                  detail: '1. Shortcut added to your Desktop.\n2. Added to your Windows Start Menu (you can now search YellowBird or right-click to Pin to Start).',
+                  buttons: ['OK'],
+                });
+              } catch (e) {
+                console.error('Failed to create shortcuts:', e);
+              }
+            }
+          },
         },
         { type: 'separator' },
         {
