@@ -4,17 +4,18 @@
 
 import { useState, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   User, Phone, CreditCard, Calendar, Shield, Moon, Sun,
   SunMedium, Volume2, VolumeX, Info, Smartphone, LogOut, Mail, Bus,
-  School, Edit3, Save, Loader2,
+  School, Edit3, Save, Loader2, AlertTriangle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import type { Driver } from '@/types';
 import { useAuthStore } from '@/stores/authStore';
 import { useSettingsStore } from '@/stores/settingsStore';
+import { useTripStore } from '@/stores/tripStore';
 
 interface PublicSchool {
   id: string;
@@ -105,13 +106,34 @@ export function DriverProfileTab() {
     voiceAnnouncements, setVoiceAnnouncements,
   } = useSettingsStore();
 
+  const { currentTrip, isTracking } = useTripStore();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [schoolId, setSchoolId] = useState(user?.school_id || '');
   const [licenseNumber, setLicenseNumber] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
+
+  // Check if a trip is currently active
+  const isTripActive = !!(currentTrip && isTracking);
+
+  const handleLogoutPress = () => {
+    if (isTripActive) {
+      toast.error('You cannot sign out while a trip is running. Please end the trip first.', {
+        icon: '🚌',
+        duration: 4000,
+      });
+      return;
+    }
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutConfirm(false);
+    logout();
+  };
 
   const { data: schools = [], isLoading: isLoadingSchools } = useQuery<PublicSchool[]>({
     queryKey: ['public-schools'],
@@ -422,14 +444,75 @@ export function DriverProfileTab() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25 }}
       >
+        {isTripActive && (
+          <div className="flex items-center gap-2 mb-3 px-4 py-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl">
+            <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
+            <p className="text-xs text-amber-700 dark:text-amber-300 font-medium">
+              Sign out is disabled while a trip is running. End the trip first.
+            </p>
+          </div>
+        )}
         <button
-          onClick={logout}
-          className="w-full flex items-center justify-center gap-2 py-3.5 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 rounded-2xl font-semibold text-sm hover:bg-red-100 dark:hover:bg-red-500/20 transition-colors active:scale-[0.98]"
+          onClick={handleLogoutPress}
+          disabled={isTripActive}
+          className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-semibold text-sm transition-colors active:scale-[0.98] ${
+            isTripActive
+              ? 'bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+              : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20'
+          }`}
         >
           <LogOut className="w-4.5 h-4.5" />
           Sign Out
         </button>
       </motion.div>
+
+      {/* Logout Confirmation Modal */}
+      <AnimatePresence>
+        {showLogoutConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onClick={() => setShowLogoutConfirm(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 60, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 60, scale: 0.95 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+              className="w-full max-w-sm bg-white dark:bg-gray-900 rounded-3xl shadow-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+              style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
+            >
+              <div className="p-6 text-center">
+                <div className="w-14 h-14 bg-red-100 dark:bg-red-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <LogOut className="w-7 h-7 text-red-500" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Sign Out?</h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                  Are you sure you want to sign out? You will need to log in again to start tracking.
+                </p>
+              </div>
+              <div className="flex border-t border-gray-100 dark:border-gray-800">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="flex-1 py-4 text-sm font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <div className="w-px bg-gray-100 dark:bg-gray-800" />
+                <button
+                  onClick={confirmLogout}
+                  className="flex-1 py-4 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                >
+                  Yes, Sign Out
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <p className="text-center text-[10px] text-gray-300 dark:text-gray-700 mt-4 mb-4">
         Made with ❤️ for safer school commutes
