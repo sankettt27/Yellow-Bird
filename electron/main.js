@@ -11,6 +11,7 @@ let mainWindow = null;
 const isDev = process.env.NODE_ENV === 'development';
 const ADMIN_WEB_URL = process.env.ADMIN_URL || 'https://yellow-bird-eosin.vercel.app/admin';
 
+function createWindow() {
   const iconPath = path.join(__dirname, 'icon.ico');
 
   mainWindow = new BrowserWindow({
@@ -28,6 +29,32 @@ const ADMIN_WEB_URL = process.env.ADMIN_URL || 'https://yellow-bird-eosin.vercel
       contextIsolation: true,
       sandbox: true,
     },
+  });
+
+  /**
+   * Admin-only session guard — clears any stale parent/driver tokens
+   * from localStorage before the admin portal loads. This prevents
+   * the desktop .exe from ever showing a parent or driver dashboard.
+   */
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.executeJavaScript(`
+      try {
+        var u = localStorage.getItem('user');
+        if (u) {
+          var role = JSON.parse(u).role;
+          if (role === 'driver' || role === 'parent') {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user');
+            sessionStorage.removeItem('access_token');
+            sessionStorage.removeItem('user');
+            window.location.reload();
+          }
+        }
+      } catch(e) {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+      }
+    `);
   });
 
   // Try loading the cloud admin portal, or local build if offline

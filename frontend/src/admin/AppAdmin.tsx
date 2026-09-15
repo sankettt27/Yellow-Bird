@@ -34,6 +34,32 @@ import { Outlet } from 'react-router-dom';
 
 const SIDEBAR_WIDTH = 260;
 
+/**
+ * Boot guard — runs once on module load, before React renders.
+ * If a parent/driver session is sitting in localStorage (e.g. from a
+ * previous mobile login on the same domain), nuke it immediately so
+ * the admin portal never flickers to the wrong role's dashboard.
+ */
+(function clearNonAdminSession() {
+  try {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
+      const role = user?.role;
+      if (role === 'driver' || role === 'parent') {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('access_token');
+        sessionStorage.removeItem('user');
+      }
+    }
+  } catch {
+    // Malformed data — clear everything to be safe
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('user');
+  }
+})();
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
