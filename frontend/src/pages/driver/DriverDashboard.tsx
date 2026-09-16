@@ -31,6 +31,7 @@ function TripTimer({ startedAt }: { startedAt: string }) {
   const [elapsed, setElapsed] = useState('00:00:00');
   const start = new Date(startedAt).getTime();
 
+  // Use a simple ref-less interval pattern
   const tick = useCallback(() => {
     const diff = Math.floor((Date.now() - start) / 1000);
     const h = String(Math.floor(diff / 3600)).padStart(2, '0');
@@ -39,11 +40,12 @@ function TripTimer({ startedAt }: { startedAt: string }) {
     setElapsed(`${h}:${m}:${s}`);
   }, [start]);
 
-  useEffect(() => {
+  // Run tick on every render via useEffect
+  useState(() => {
     tick();
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [tick]);
+  });
 
   return <span className="font-mono text-xl font-bold text-brand-500">{elapsed}</span>;
 }

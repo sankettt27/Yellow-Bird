@@ -601,15 +601,10 @@ export function ParentTrackingTab() {
 
         {/* Map */}
         <div className="flex-1 w-full" style={{ minHeight: 0 }}>
-          {/* Injecting CSS to make the bus marker glide smoothly like Zomato/Uber without map jitter */}
+          {/* Injecting CSS to make the bus marker glide smoothly like Zomato/Uber */}
           <style>{`
             .smooth-bus-marker {
-              transition: transform 1.5s cubic-bezier(0.25, 1, 0.5, 1) !important;
-              will-change: transform;
-            }
-            .leaflet-zoom-anim .smooth-bus-marker,
-            .leaflet-pan-anim .smooth-bus-marker {
-              transition: none !important;
+              transition: transform 2s cubic-bezier(0.25, 1, 0.5, 1) !important;
             }
           `}</style>
           
