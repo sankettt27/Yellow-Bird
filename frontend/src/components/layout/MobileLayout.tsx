@@ -46,11 +46,11 @@ export function MobileLayout() {
   return (
     <div className="min-h-screen bg-surface dark:bg-gray-950 flex flex-col">
       {/* ── Mobile Header ── */}
-      <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/60 dark:border-gray-800/60">
+      <header className="sticky top-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-b border-gray-200/60 dark:border-gray-800/60 gpu-layer">
         <div className="flex items-center justify-between px-4 h-14">
           {/* Brand */}
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/20">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-md shadow-brand-500/20">
               <Bus className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -65,7 +65,7 @@ export function MobileLayout() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigate(settingsPath)}
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-gray-100/80 dark:bg-gray-800/80 hover:bg-gray-200/80 dark:hover:bg-gray-700/80 transition-colors active:scale-95"
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-gray-100/90 dark:bg-gray-800/90 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors active:scale-95"
             >
               <div className="w-6 h-6 rounded-full bg-brand-500 flex items-center justify-center text-white text-[10px] font-bold">
                 {user?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2)}
@@ -84,7 +84,8 @@ export function MobileLayout() {
       </main>
 
       {/* ── Bottom Tab Bar ── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-200/60 dark:border-gray-800/60"
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md border-t border-gray-200/60 dark:border-gray-800/60 gpu-layer"
         style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
       >
         <div className="flex items-center justify-around h-16 px-2">
@@ -97,7 +98,7 @@ export function MobileLayout() {
               <NavLink
                 key={tab.path}
                 to={tab.path}
-                className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1 relative"
+                className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1 relative select-none"
               >
                 {isActive && (
                   <motion.div

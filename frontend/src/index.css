@@ -58,8 +58,31 @@
     border-color: hsl(var(--border));
   }
 
+  html, body {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    overscroll-behavior-y: none;
+    overscroll-behavior-x: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
+  }
+
+  /* 0ms touch latency on all interactive controls */
+  button, a, input, select, textarea, [role="button"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Native smooth momentum scrolling */
+  .overflow-y-auto, .overflow-x-auto, main {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
 
   /* Custom scrollbar */
@@ -82,12 +105,21 @@
 }
 
 @layer utilities {
+  /* GPU layer promotion for zero repaint lag */
+  .gpu-layer {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+    will-change: transform;
+  }
+
+  /* Optimized glassmorphism: clean 90% opaque with 8px blur instead of CPU-crushing 24px */
   .glass {
-    @apply backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 border border-white/20 dark:border-gray-800/50;
+    @apply bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border border-white/30 dark:border-gray-800/60 shadow-sm;
   }
 
   .glass-card {
-    @apply bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg border border-gray-200/50 dark:border-gray-700/50 shadow-card rounded-2xl;
+    @apply bg-white/95 dark:bg-gray-800/95 backdrop-blur-md border border-gray-200/60 dark:border-gray-700/60 shadow-card rounded-2xl;
   }
 
   .gradient-primary {
@@ -99,11 +131,26 @@
   }
 }
 
-/* Mapbox override styles */
+/* Mapbox / Leaflet override styles & performance */
 .mapboxgl-ctrl-logo {
   display: none !important;
 }
 
 .mapboxgl-ctrl-attrib {
   font-size: 10px !important;
+}
+
+/* Leaflet map performance enhancements */
+.leaflet-tile-container img {
+  will-change: transform;
+}
+
+.leaflet-container {
+  touch-action: pan-x pan-y pinch-zoom !important;
+}
+
+/* Prevent marker jitter or lag while zooming / panning */
+.leaflet-zoom-anim .smooth-bus-marker,
+.leaflet-pan-anim .smooth-bus-marker {
+  transition: none !important;
 }
