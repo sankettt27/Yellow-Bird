@@ -4,7 +4,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { GraduationCap, Search, Plus, Pencil, Trash2, Bus, X, Users, Upload, FileSpreadsheet } from 'lucide-react';
+import {
+  GraduationCap, Search, Plus, Pencil, Trash2, Bus, X, Users, Upload, FileSpreadsheet,
+  ChevronLeft, ChevronRight, RefreshCw
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
 import { useAuthStore } from '@/stores/authStore';
@@ -24,16 +27,17 @@ interface BusStopItem {
 export function StudentsPage() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
-  const [page] = useState(1);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [editStudent, setEditStudent] = useState<Student | null>(null);
 
-  const { data, isLoading } = useQuery<PaginatedResponse<Student>>({
-    queryKey: ['students', page, search],
+  const { data, isLoading, refetch, isFetching } = useQuery<PaginatedResponse<Student>>({
+    queryKey: ['students', page, pageSize, search],
     queryFn: async () => {
-      const params = new URLSearchParams({ page: String(page), page_size: '15' });
+      const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
       if (search) params.set('search', search);
       const res = await api.get(`/students?${params}`);
       return res.data;
@@ -110,6 +114,15 @@ export function StudentsPage() {
         </div>
         <div className="flex gap-3">
           <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="flex items-center gap-2 px-3 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl text-sm font-medium transition-colors"
+            title="Refresh students roster"
+          >
+            <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin text-brand-500' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+          <button
             onClick={() => setShowUploadModal(true)}
             className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl text-sm font-medium transition-colors"
           >
@@ -131,7 +144,10 @@ export function StudentsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             placeholder="Search by student name, class, roll number..."
             className="w-full pl-9 pr-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 text-sm text-gray-900 dark:text-white"
           />
@@ -146,70 +162,127 @@ export function StudentsPage() {
         </div>
       ) : students.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700">
-          <GraduationCap className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 dark:text-gray-400 font-medium">No students enrolled</p>
+          <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+          <p className="text-gray-500 dark:text-gray-400 font-medium">No students found</p>
+          <p className="text-xs text-gray-400 mt-1">Add a student or upload an Excel roster to get started.</p>
         </div>
       ) : (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 overflow-hidden">
-          <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_80px] px-5 py-3 bg-gray-50 dark:bg-gray-700/50 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-            <div>Student Name</div>
-            <div>Class & Section</div>
-            <div>Roll Number</div>
-            <div>Assigned Bus</div>
-            <div className="text-right">Actions</div>
-          </div>
-          <div className="divide-y divide-gray-100 dark:divide-gray-700/50">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
+          <div className="divide-y divide-gray-100 dark:divide-gray-700/60">
             {students.map((student) => (
               <div
                 key={student.id}
-                className="grid grid-cols-[1.5fr_1fr_1fr_1fr_80px] items-center px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors"
+                className="p-4 flex items-center justify-between hover:bg-gray-50/80 dark:hover:bg-gray-700/30 transition-colors"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 dark:text-brand-400 font-bold text-xs">
-                    {student.full_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-900/20 flex items-center justify-center text-brand-600 font-bold text-sm">
+                    {student.full_name.charAt(0)}
                   </div>
-                  <span className="font-semibold text-sm text-gray-900 dark:text-white">
-                    {student.full_name}
-                  </span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold text-gray-900 dark:text-white">{student.full_name}</span>
+                      {student.roll_number && (
+                        <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-md font-mono">
+                          Roll #{student.roll_number}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      <span>Class: {student.class_name ?? '—'}{student.section ? `-${student.section}` : ''}</span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Bus className="w-3.5 h-3.5" />
+                        {student.assigned_bus_id
+                          ? (buses.find((b) => b.id === student.assigned_bus_id)?.bus_number ?? 'Assigned')
+                          : 'No Bus'}
+                      </span>
+                      <span>•</span>
+                      <span>
+                        Parent:{' '}
+                        {student.parent_id ? (
+                          <span className="text-brand-600 font-medium">
+                            {parents.find(p => p.id === student.parent_id)?.user?.full_name ?? 'Linked'}
+                          </span>
+                        ) : (
+                          <span className="text-amber-500 font-medium">Unlinked</span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  Class {student.class_name || '—'}{student.section ? `-${student.section}` : ''}
-                  {student.roll_number ? ` • Roll #${student.roll_number}` : ''}
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {student.assigned_bus_id ? (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
-                      <Bus className="w-3 h-3" />
-                      {buses.find(b => b.id === student.assigned_bus_id)?.bus_number ?? 'Assigned'}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-gray-400 italic">No Bus</span>
-                  )}
-                  {student.parent_id ? (
-                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
-                      <Users className="w-3 h-3" />
-                      {parents.find(p => p.id === student.parent_id)?.user?.full_name ?? 'Linked'}
-                    </span>
-                  ) : (
-                    <span className="text-xs text-gray-400 italic">No Parent</span>
-                  )}
-                </div>
-                <div className="flex items-center justify-end gap-1">
+
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => setEditStudent(student)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-brand-600"
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-900/20"
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => deleteStudent.mutate(student.id)}
-                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-600"
+                    className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Pagination Footer */}
+      {!isLoading && data && data.total > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-3 border border-gray-100 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-800 shadow-sm">
+          <div className="flex items-center gap-3">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Showing <span className="font-semibold text-gray-900 dark:text-white">{(page - 1) * pageSize + 1}–{Math.min(page * pageSize, data.total)}</span> of <span className="font-semibold text-gray-900 dark:text-white">{data.total}</span> students
+            </p>
+            <div className="flex items-center gap-1.5 text-xs text-gray-400">
+              <span>Show</span>
+              <select
+                value={pageSize}
+                onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+                className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1 text-xs text-gray-700 dark:text-gray-200 focus:outline-none"
+              >
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            {Array.from({ length: Math.min(data.total_pages, 7) }, (_, i) => {
+              const p = data.total_pages <= 7 ? i + 1 : page <= 4 ? i + 1 : page + i - 3;
+              return p <= data.total_pages && p > 0 ? (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${
+                    p === page
+                      ? 'bg-brand-500 text-white'
+                      : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400'
+                  }`}
+                >
+                  {p}
+                </button>
+              ) : null;
+            })}
+            <button
+              onClick={() => setPage(p => Math.min(data.total_pages, p + 1))}
+              disabled={page >= data.total_pages}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
@@ -234,6 +307,7 @@ export function StudentsPage() {
           onSuccess={() => {
             setShowUploadModal(false);
             queryClient.invalidateQueries({ queryKey: ['students'] });
+            refetch();
           }}
         />
       )}
@@ -399,19 +473,21 @@ function StudentUploadModal({ onClose, onSuccess }: { onClose: () => void, onSuc
   };
 
   const handleUpload = async () => {
-    if (!file) return;
+    if (!file || isUploading) return;
     setIsUploading(true);
     const formData = new FormData();
     formData.append('file', file);
 
     try {
       const res = await api.post('/students/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 180000,
       });
       toast.success(res.data.message || 'Upload successful');
       onSuccess();
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Failed to upload students');
+      onSuccess();
     } finally {
       setIsUploading(false);
     }

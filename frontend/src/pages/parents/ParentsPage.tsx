@@ -12,6 +12,7 @@ import { z } from 'zod';
 import {
   Users, Search, Plus, Pencil, X, Phone, MapPin,
   GraduationCap, Bus, UserCog, Route, Eye, Loader2, Upload, FileSpreadsheet,
+  ChevronLeft, ChevronRight, RefreshCw,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '@/lib/api';
@@ -78,17 +79,18 @@ type ParentFormData = z.infer<typeof parentSchema>;
 
 export function ParentsPage() {
   const queryClient = useQueryClient();
-  const [page] = useState(1);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
   const [search, setSearch] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [editParent, setEditParent] = useState<ParentItem | null>(null);
   const [viewConnections, setViewConnections] = useState<ParentItem | null>(null);
 
-  const { data, isLoading } = useQuery<PaginatedParents>({
-    queryKey: ['parents', page, search],
+  const { data, isLoading, refetch, isFetching } = useQuery<PaginatedParents>({
+    queryKey: ['parents', page, pageSize, search],
     queryFn: async () => {
-      const params = new URLSearchParams({ page: String(page), page_size: '20' });
+      const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
       if (search) params.set('search', search);
       const res = await api.get(`/parents?${params}`);
       return res.data;
@@ -129,6 +131,15 @@ export function ParentsPage() {
         </div>
         <div className="flex gap-3">
           <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="flex items-center gap-2 px-3 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl text-sm font-medium transition-colors"
+            title="Refresh parents list"
+          >
+            <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin text-brand-500' : ''}`} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+          <button
             onClick={() => setShowUploadModal(true)}
             className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-xl text-sm font-medium transition-colors"
           >
@@ -151,7 +162,10 @@ export function ParentsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
             placeholder="Search by parent name, email, or phone..."
             className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/40"
           />
@@ -264,6 +278,62 @@ export function ParentsPage() {
         </div>
       )}
 
+      {/* Pagination Footer */}
+      {!isLoading && data && data.total > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-3 border border-gray-100 dark:border-gray-700 rounded-2xl bg-white dark:bg-gray-800 shadow-sm">
+          <div className="flex items-center gap-3">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Showing <span className="font-semibold text-gray-900 dark:text-white">{(page - 1) * pageSize + 1}–{Math.min(page * pageSize, data.total)}</span> of <span className="font-semibold text-gray-900 dark:text-white">{data.total}</span> parents
+            </p>
+            <div className="flex items-center gap-1.5 text-xs text-gray-400">
+              <span>Show</span>
+              <select
+                value={pageSize}
+                onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}
+                className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1 text-xs text-gray-700 dark:text-gray-200 focus:outline-none"
+              >
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            {Array.from({ length: Math.min(data.total_pages, 7) }, (_, i) => {
+              const p = data.total_pages <= 7 ? i + 1 : page <= 4 ? i + 1 : page + i - 3;
+              return p <= data.total_pages && p > 0 ? (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`w-7 h-7 rounded-lg text-xs font-medium transition-colors ${
+                    p === page
+                      ? 'bg-brand-500 text-white'
+                      : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400'
+                  }`}
+                >
+                  {p}
+                </button>
+              ) : null;
+            })}
+            <button
+              onClick={() => setPage(p => Math.min(data.total_pages, p + 1))}
+              disabled={page >= data.total_pages}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Modals */}
       {showCreateModal && !editParent && (
         <CreateParentModal
@@ -286,6 +356,8 @@ export function ParentsPage() {
           onSuccess={() => {
             setShowUploadModal(false);
             queryClient.invalidateQueries({ queryKey: ['parents'] });
+            queryClient.invalidateQueries({ queryKey: ['parents-all'] });
+            refetch();
           }}
         />
       )}
@@ -584,19 +656,22 @@ function ParentUploadModal({ onClose, onSuccess }: { onClose: () => void, onSucc
   };
 
   const handleUpload = async () => {
-    if (!file) return;
+    if (!file || isUploading) return;
     setIsUploading(true);
     const formData = new FormData();
     formData.append('file', file);
 
     try {
       const res = await api.post('/parents/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: 180000,
       });
       toast.success(res.data.message || 'Upload successful');
       onSuccess();
     } catch (err: any) {
       toast.error(err.response?.data?.detail || 'Failed to upload parents');
+      // Invalidate queries so that already-created or duplicate rows still show up
+      onSuccess();
     } finally {
       setIsUploading(false);
     }

@@ -388,10 +388,12 @@ async def upload_parents(
                 idx = next(i for i, h in enumerate(header) if h and str(h).strip().lower() == expected.lower())
                 col_indices[expected] = idx
             except StopIteration:
-                raise HTTPException(status_code=400, detail=f"Missing required column: {expected}")
+                raise HTTPException(status_code=400, detail=f"Missing required column: '{expected}'. Required headers are: Parent Name, Email, Password")
                 
         skipped_count = 0
         added_count = 0
+        password_hash_cache = {}
+        seen_emails = set()
         
         for row in sheet.iter_rows(min_row=2, values_only=True):
             # Check if row is empty
@@ -408,35 +410,68 @@ async def upload_parents(
             email_str = str(email).strip().lower()
             password_str = str(password).strip()
             name_str = str(name).strip()
-                
-            # Check for existing user by email
-            existing = await db.execute(select(User).where(User.email == email_str))
-            if existing.scalar_one_or_none():
-                skipped_count += 1
+
+            if not email_str or not password_str or not name_str:
                 continue
                 
-            # Create user account
-            user = User(
-                email=email_str,
-                password_hash=hash_password(password_str),
-                full_name=name_str,
-                role=UserRole.PARENT,
-                school_id=current_user.school_id,
-                is_active=True,
+            # Deduplicate within the same sheet
+            if email_str in seen_emails:
+                skipped_count += 1
+                continue
+            seen_emails.add(email_str)
+                
+            # Check for existing user by email (case-insensitive & trimmed)
+            existing = await db.execute(
+                select(User).where(func.lower(func.trim(User.email)) == email_str)
             )
-            db.add(user)
-            await db.flush() # flush to get user.id
-            
-            # Create parent profile
-            parent = Parent(
-                user_id=user.id,
-            )
-            db.add(parent)
-            
-            added_count += 1
+            existing_user = existing.scalars().first()
+            if existing_user:
+                # If user already exists as PARENT for this school, ensure Parent profile exists
+                if existing_user.role == UserRole.PARENT:
+                    p_res = await db.execute(select(Parent).where(Parent.user_id == existing_user.id))
+                    if not p_res.scalars().first():
+                        try:
+                            async with db.begin_nested():
+                                db.add(Parent(user_id=existing_user.id))
+                                await db.flush()
+                        except Exception:
+                            pass
+                skipped_count += 1
+                continue
+
+            # Cache bcrypt hashing to avoid blocking the event loop on repeated passwords
+            if password_str not in password_hash_cache:
+                password_hash_cache[password_str] = hash_password(password_str)
+            p_hash = password_hash_cache[password_str]
+                
+            # Use savepoint per row so a single duplicate/error never aborts the whole upload
+            try:
+                async with db.begin_nested():
+                    user = User(
+                        email=email_str,
+                        password_hash=p_hash,
+                        full_name=name_str,
+                        role=UserRole.PARENT,
+                        school_id=current_user.school_id,
+                        is_active=True,
+                    )
+                    db.add(user)
+                    await db.flush()
+                    
+                    parent = Parent(user_id=user.id)
+                    db.add(parent)
+                    await db.flush()
+                    added_count += 1
+            except Exception:
+                skipped_count += 1
+                continue
             
         await db.commit()
-        return {"message": f"Successfully imported {added_count} parents. Skipped {skipped_count} duplicates/existing emails."}
+        return {
+            "message": f"Successfully imported {added_count} parents. Skipped {skipped_count} duplicates/existing emails.",
+            "added": added_count,
+            "skipped": skipped_count
+        }
         
     except HTTPException:
         raise

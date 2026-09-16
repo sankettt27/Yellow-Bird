@@ -165,9 +165,9 @@ async def upload_students(
             except StopIteration:
                 raise HTTPException(status_code=400, detail=f"Missing required column: {expected}")
                 
-        students_to_add = []
         skipped_count = 0
         added_count = 0
+        seen_students = set()
         
         for row in sheet.iter_rows(min_row=2, values_only=True):
             # Check if row is empty
@@ -182,13 +182,25 @@ async def upload_students(
             if not name:
                 continue # Skip rows without a name
                 
-            # Check for exact duplicate in DB
+            name_str = str(name).strip()
+            class_str = str(class_name).strip() if class_name is not None else None
+            section_str = str(section).strip() if section is not None else None
+            roll_str = str(roll_no).strip() if roll_no is not None else None
+
+            # Deduplicate in current batch
+            student_key = (name_str.lower(), (class_str or "").lower(), (section_str or "").lower(), (roll_str or "").lower())
+            if student_key in seen_students:
+                skipped_count += 1
+                continue
+            seen_students.add(student_key)
+
+            # Check for exact duplicate in DB (case-insensitive name)
             query = select(Student).where(
                 Student.school_id == current_user.school_id,
-                Student.full_name == str(name).strip(),
-                Student.class_name == (str(class_name).strip() if class_name else None),
-                Student.section == (str(section).strip() if section else None),
-                Student.roll_number == (str(roll_no).strip() if roll_no else None)
+                func.lower(func.trim(Student.full_name)) == name_str.lower(),
+                Student.class_name == class_str,
+                Student.section == section_str,
+                Student.roll_number == roll_str
             )
             existing = (await db.execute(query)).scalar_one_or_none()
             
@@ -196,18 +208,28 @@ async def upload_students(
                 skipped_count += 1
                 continue
                 
-            student = Student(
-                school_id=current_user.school_id,
-                full_name=str(name).strip(),
-                class_name=str(class_name).strip() if class_name else None,
-                section=str(section).strip() if section else None,
-                roll_number=str(roll_no).strip() if roll_no else None,
-            )
-            db.add(student)
-            added_count += 1
+            try:
+                async with db.begin_nested():
+                    student = Student(
+                        school_id=current_user.school_id,
+                        full_name=name_str,
+                        class_name=class_str,
+                        section=section_str,
+                        roll_number=roll_str,
+                    )
+                    db.add(student)
+                    await db.flush()
+                    added_count += 1
+            except Exception:
+                skipped_count += 1
+                continue
             
-        await db.flush()
-        return {"message": f"Successfully imported {added_count} students. Skipped {skipped_count} duplicates."}
+        await db.commit()
+        return {
+            "message": f"Successfully imported {added_count} students. Skipped {skipped_count} duplicates.",
+            "added": added_count,
+            "skipped": skipped_count
+        }
         
     except HTTPException:
         raise
