@@ -5,11 +5,12 @@
 
 ---
 
-**Project Report**
+**Project & Architectural Report**
 
-**Submitted by:** [Your Name]
-**Institution:** [Your College / University]
-**Date:** August 2026
+**Author & Sole Legal Owner:** Sanket Zinjurke  
+**Contact / Authority:** sanketzinjurke83@gmail.com  
+**Platform:** YellowBird Transport Technologies  
+**Date:** 2026
 
 ---
 

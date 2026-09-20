@@ -43,6 +43,14 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description="Real-Time School Bus Tracking & Fleet Management Platform",
+    contact={
+        "name": "Sanket Zinjurke",
+        "email": "sanketzinjurke83@gmail.com",
+    },
+    license_info={
+        "name": "Proprietary Commercial License — All Rights Reserved to Sanket Zinjurke",
+        "url": "https://github.com/sankettt27/Yellow-Bird/blob/main/LICENSE",
+    },
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",

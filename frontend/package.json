@@ -1,7 +1,9 @@
 {
   "name": "frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "author": "Sanket Zinjurke <sanketzinjurke83@gmail.com>",
+  "license": "Proprietary",
   "type": "module",
   "scripts": {
     "dev": "vite --host",

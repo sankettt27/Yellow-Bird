@@ -1,64 +1,78 @@
 PROPRIETARY & COMMERCIAL SOURCE CODE LICENSE
 
-Copyright (c) 2024-2026 Sanket Zinjurke / YellowBird Transport Technologies.
-All Rights Reserved.
+Copyright (c) 2024-2026 Sanket Zinjurke. All Rights Reserved.
+Product / Platform: YellowBird — Real-Time School Bus Tracking Ecosystem
+
+===============================================================================
+LEGAL OWNERSHIP, AUTHORSHIP, AND EXCLUSIVE AUTHORITY
+===============================================================================
+
+This entire software ecosystem, including without limitation all source code, 
+backend APIs, database architecture, algorithms, WebSocket telemetry pipelines, 
+frontend user interfaces, mobile applications (APK), desktop portals, scripts, 
+and associated documentation, is the exclusive intellectual property and creation of:
+
+    SOLE LEGAL OWNER & AUTHOR: Sanket Zinjurke
+    CONTACT & LEGAL INQUIRIES: sanketzinjurke83@gmail.com
+    COMMERCIAL ENTITY / BRAND: YellowBird Transport Technologies
+
+All legal authority, proprietary rights, title, interest, copyrights, patents, 
+and trade secrets throughout the world are owned exclusively and unconditionally 
+by Sanket Zinjurke.
 
 ===============================================================================
 STRICT NOTICE: PERMISSION IS NOT GRANTED
 ===============================================================================
 
-NO PERMISSION IS GRANTED to any individual, entity, institution, or organization 
-to copy, modify, distribute, reproduce, sublicense, decompile, reverse-engineer, 
-publicly display, or resell any part of this software codebase, documentation, 
-APIs, database schemas, or associated materials without prior express written 
-consent from the copyright owner.
+NO PERMISSION IS GRANTED to any individual, company, educational institution, 
+agency, or third party to copy, modify, distribute, reproduce, sublicense, 
+decompile, reverse-engineer, publicly display, host, or resell any part of this 
+software without prior express written authorization directly executed by 
+Sanket Zinjurke.
 
-1. ACCESS AND PERMISSION INQUIRIES:
-   Access to use, evaluate, license, or deploy this software must be requested 
-   directly by contacting the copyright owner:
-   Contact Email: sanketzinjurke83@gmail.com
+1. ACCESS AND AUTHORIZATION INQUIRIES:
+   Any request for source code access, organizational deployment, institutional 
+   licensing, or evaluation must be submitted directly in writing to:
+   Email: sanketzinjurke83@gmail.com
 
-2. PROHIBITION OF RESALE AND COMMERCIAL EXPLOITATION:
-   Under no circumstances is this software or any derivative work permitted to be 
-   resold, leased, repackaged, whitelabeled, or used for commercial gain by any 
-   third party without an executed enterprise commercial licensing agreement.
+2. STRICT PROHIBITION OF RESALE AND COMMERCIAL EXPLOITATION:
+   Under no circumstances may this software, codebase, or any derivative works 
+   be resold, leased, sublicensed, white-labeled, repackaged, or monetized by any 
+   third party. Any such unauthorized transaction constitutes commercial fraud.
 
-3. GOVERNING LEGAL ACTS AND STATUTORY PROSECUTION:
-   Any unauthorized copying, distribution, resale, or exploitation constitutes 
-   willful copyright infringement, intellectual property theft, and cyber crime. 
-   Strict civil litigation and criminal prosecution will be initiated under the 
-   following statutory legal frameworks:
+3. STATUTORY ENFORCEMENT & CRIMINAL PROSECUTION:
+   Unauthorized possession, duplication, distribution, tampering, or resale will 
+   trigger immediate civil damages litigation and criminal prosecution under all 
+   applicable statutory laws, including:
 
    a) The Indian Copyright Act, 1957 (and Copyright Amendment Act, 2012):
-      - Section 51 & Section 63: Copyright infringement in computer programs, 
-        source code, and software systems, punishable with mandatory imprisonment 
-        up to three (3) years and heavy statutory financial penalties.
-      - Section 63B: Knowing use and distribution of infringing copies of computer programs.
+      - Sections 51, 63, and 63B: Copyright infringement of computer programs and 
+        source code, punishable with mandatory imprisonment up to three (3) years 
+        and heavy statutory criminal penalties.
 
    b) The Information Technology Act, 2000 (IT Act, India):
-      - Section 43: Civil penalty, damages, and compensation for unauthorized copying, 
-        downloading, extraction, or possession of computer data, code, and databases.
-      - Section 65: Tampering with computer source documents, punishable with imprisonment 
-        up to three (3) years and/or fine.
+      - Section 43: Civil damages and penalties for unauthorized access, downloading, 
+        or extraction of computer source code, data, and databases.
+      - Section 65: Tampering with computer source documents (punishable with imprisonment 
+        up to 3 years and/or fine).
       - Section 66: Computer-related offenses, hacking, and fraudulent misappropriation 
-        of electronic property.
+        of electronic intellectual property.
 
    c) Bharatiya Nyaya Sanhita, 2023 (BNS) / Indian Penal Code (IPC):
-      - Provisions governing Criminal Breach of Trust, Cheating, Dishonest Misappropriation 
-        of Property, and Commercial Fraud.
+      - Provisions regarding Criminal Breach of Trust, Cheating, Dishonest Misappropriation, 
+        and Commercial Fraud.
 
-   d) International Copyright Treaties & Global Protection:
+   d) International Treaties & Cross-Border Enforcement:
       - Berne Convention for the Protection of Literary and Artistic Works (enforcing 
-        automatic international copyright reciprocity across 180+ member nations).
-      - Universal Copyright Convention and TRIPS Agreement (Trade-Related Aspects of 
-        Intellectual Property Rights).
-      - Digital Millennium Copyright Act (DMCA, 17 U.S.C. § 512 / § 1201).
+        automatic reciprocal copyright protection across 180+ member nations).
+      - Universal Copyright Convention and TRIPS Agreement.
+      - Digital Millennium Copyright Act (DMCA, Title 17, United States Code).
 
-4. INJUNCTIVE RELIEF AND DAMAGES:
-   The copyright owner reserves the right to seek immediate ex-parte injunctions, 
-   permanent cease-and-desist orders, seizure of infringing servers and domains, 
-   maximum statutory damages, and full recovery of legal costs.
+4. INJUNCTIVE RELIEF AND RECOVERY:
+   The copyright owner (Sanket Zinjurke) reserves the immediate legal right to 
+   obtain ex-parte injunctions, court-ordered impoundment of servers and infringing 
+   copies, maximum statutory damages, and full recovery of all legal and attorney fees.
 
 ===============================================================================
-Official Inquiry / Licensing Contact: sanketzinjurke83@gmail.com
+Sole Authority & Official Licensing Contact: sanketzinjurke83@gmail.com
 ===============================================================================

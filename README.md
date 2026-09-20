@@ -641,19 +641,21 @@ During initial database seeding, the system provisions local development account
 
 ---
 
-## 📄 License & Intellectual Property Rights
+## 📄 Legal Ownership & Intellectual Property Rights
 
-**Copyright © 2024–2026 Sanket Zinjurke / YellowBird Transport Technologies. All Rights Reserved.**
+**Copyright © 2024–2026 Sanket Zinjurke. All Rights Reserved.**  
+**Sole Legal Owner & Exclusive Authority:** **Sanket Zinjurke** (`sanketzinjurke83@gmail.com`)  
+**Brand & Platform:** YellowBird Transport Technologies
 
-This software, documentation, database architecture, and mobile applications are strictly proprietary and confidential. **Permission is NOT granted** to any unauthorized party to copy, modify, distribute, reproduce, sublicense, decompile, or resell any part of this codebase.
+All software, backend services, database schemas, mobile applications (Android APK), desktop portals, and telemetry protocols in this repository are the exclusive proprietary property of **Sanket Zinjurke**. **Permission is NOT granted** to any unauthorized party to copy, modify, distribute, reproduce, sublicense, decompile, or resell any part of this codebase.
 
-* **Access Inquiries & Commercial Rights**: Authorized access or licensing rights may be formally requested by contacting: **`sanketzinjurke83@gmail.com`**.
-* **Prohibition of Resale**: You cannot resell, lease, sublicense, or commercially exploit this software due to exclusive copyright ownership.
-* **Statutory Enforcement & Governing Law**: Any unauthorized use, reproduction, or resale will face immediate civil litigation and criminal prosecution under:
+* **Sole Authority & Licensing Requests**: All access permissions, enterprise deployment rights, and commercial inquiries must be directly submitted to: **`sanketzinjurke83@gmail.com`**.
+* **Strict Resale Prohibition**: You cannot resell, lease, sublicense, or commercially exploit this software. All commercial and distribution authority belongs solely to Sanket Zinjurke.
+* **Statutory Civil & Criminal Enforcement**: Any unauthorized use, reproduction, or resale will face immediate legal prosecution under:
   * **The Indian Copyright Act, 1957 (and Amendment Act, 2012)** — *Sections 51, 63, and 63B (punishable with imprisonment up to 3 years and statutory criminal penalties)*.
   * **The Information Technology Act, 2000 (IT Act, India)** — *Sections 43, 65, and 66 (tampering with computer source documents, cyber misappropriation, and hacking offenses)*.
   * **Bharatiya Nyaya Sanhita, 2023 (BNS) / Indian Penal Code (IPC)** — *Criminal breach of trust, intellectual property theft, and commercial fraud*.
-  * **International Treaties**: *The Berne Convention for the Protection of Literary and Artistic Works (enforced across 180+ member countries) and the Digital Millennium Copyright Act (DMCA, Title 17 U.S.C.)*.
+  * **International Treaties**: *The Berne Convention for the Protection of Literary and Artistic Works (enforced across 180+ countries) and the Digital Millennium Copyright Act (DMCA, Title 17 U.S.C.)*.
 
 ---
 

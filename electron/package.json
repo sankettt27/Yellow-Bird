@@ -15,8 +15,8 @@
     "admin-portal",
     "electron"
   ],
-  "author": "YellowBird Technologies",
-  "license": "ISC",
+  "author": "Sanket Zinjurke <sanketzinjurke83@gmail.com>",
+  "license": "Proprietary",
   "devDependencies": {
     "electron": "^33.2.1",
     "electron-builder": "^25.1.8"
