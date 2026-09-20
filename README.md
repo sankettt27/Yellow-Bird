@@ -427,23 +427,27 @@ Transfer this file to any Android device (running Android 8.0+) and tap to insta
 
 You can click any of the direct download links below on your mobile device or computer to immediately download and install the application:
 
-| Download Source | Type | Link |
+| Download Option | Type | Download Link |
 |---|---|---|
-| **Direct APK File (GitHub)** | Standalone Binary (`.apk`) | [📥 **Download YellowBird-final.apk (8.01 MB)**](https://github.com/sankettt27/Yellow-Bird/raw/main/YellowBird-final.apk) |
-| **Cloud CDN Mirror (Vercel)** | Fast HTTPS Mirror | [🌐 **Download from Cloud Mirror**](https://yellow-bird-eosin.vercel.app/YellowBird.apk) |
-| **Interactive Download Portal** | Web UI + Instructions | [📱 **Open Mobile Install Portal**](https://yellow-bird-eosin.vercel.app/download) |
+| **Direct APK File (Instant)** | Standalone Binary (`.apk`) | [📥 **Download YellowBird.apk (8.01 MB)**](https://yellow-bird-eosin.vercel.app/YellowBird.apk) |
+| **Interactive Install Portal** | Web UI with Guide & Sharing | [📱 **Open Download Portal (/download)**](https://yellow-bird-eosin.vercel.app/download) |
+| **Repository File (GitHub)** | Source Repo File | [📂 **YellowBird-final.apk (Repository Root)**](./YellowBird-final.apk) |
 
 <div align="left" style="margin-top: 12px; margin-bottom: 16px;">
-  <a href="https://github.com/sankettt27/Yellow-Bird/raw/main/YellowBird-final.apk">
-    <img src="https://img.shields.io/badge/📲%20Download-YellowBird--final.apk%20(8.01%20MB)-success?style=for-the-badge&logo=android&logoColor=white" alt="Download YellowBird APK" />
+  <a href="https://yellow-bird-eosin.vercel.app/YellowBird.apk">
+    <img src="https://img.shields.io/badge/📲%20Download-YellowBird.apk%20(8.01%20MB)-success?style=for-the-badge&logo=android&logoColor=white" alt="Download YellowBird APK" />
+  </a>
+  &nbsp;
+  <a href="https://yellow-bird-eosin.vercel.app/download">
+    <img src="https://img.shields.io/badge/📱%20Mobile%20Portal-Open%20Installation%20Page-blue?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Open Download Portal" />
   </a>
 </div>
 
 > 💡 **Quick Android Installation Steps**:
-> 1. Tap the download link above on your Android phone.
-> 2. If Chrome displays *"File might be harmful"*, tap **Download anyway** (standard Android verification for direct APK downloads).
-> 3. Open the downloaded `YellowBird-final.apk` from your notification bar and tap **Install**.
-> 4. Drivers and Parents can log in immediately — the app automatically displays the appropriate interface based on your login account.
+> 1. Tap the **[Download YellowBird.apk](https://yellow-bird-eosin.vercel.app/YellowBird.apk)** link above on your Android phone.
+> 2. If Chrome displays *"File might be harmful"*, tap **Download anyway** (standard Android security prompt for APKs downloaded outside the Google Play Store).
+> 3. Open the downloaded `YellowBird.apk` from your phone's notification bar or *Downloads* folder and tap **Install**.
+> 4. Launch the app! Both Drivers and Parents can log in immediately — the app automatically switches to the proper interface based on the user's role.
 
 
 ---
