@@ -10,8 +10,7 @@
 [![Electron](https://img.shields.io/badge/Desktop-Electron%20Windows-47848F?logo=electron&logoColor=white)](#-desktop-admin-app-electron)
 [![WebSockets](https://img.shields.io/badge/Streaming-Native%20WebSockets-FF6B6B)](#-real-time-websocket-architecture)
 [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%20+%20asyncpg-336791?logo=postgresql&logoColor=white)](#-database-architecture)
-[![TailwindCSS](https://img.shields.io/badge/Styling-TailwindCSS%20+%20Framer%20Motion-38B2AC?logo=tailwindcss&logoColor=white)](#-technology-stack)
-[![License](https://img.shields.io/badge/License-MIT-F59E0B)](#)
+[![License](https://img.shields.io/badge/License-Proprietary%20%26%20Commercial-red)](#-license--intellectual-property-rights)
 
 </div>
 
@@ -615,9 +614,19 @@ During initial database seeding, the system provisions local development account
 
 ---
 
-## 📄 License
+## 📄 License & Intellectual Property Rights
 
-This project is licensed under the **MIT License** — see the `LICENSE` file for details.
+**Copyright © 2024–2026 Sanket Zinjurke / YellowBird Transport Technologies. All Rights Reserved.**
+
+This software, documentation, database architecture, and mobile applications are strictly proprietary and confidential. **Permission is NOT granted** to any unauthorized party to copy, modify, distribute, reproduce, sublicense, decompile, or resell any part of this codebase.
+
+* **Access Inquiries & Commercial Rights**: Authorized access or licensing rights may be formally requested by contacting: **`sanketzinjurke83@gmail.com`**.
+* **Prohibition of Resale**: You cannot resell, lease, sublicense, or commercially exploit this software due to exclusive copyright ownership.
+* **Statutory Enforcement & Governing Law**: Any unauthorized use, reproduction, or resale will face immediate civil litigation and criminal prosecution under:
+  * **The Indian Copyright Act, 1957 (and Amendment Act, 2012)** — *Sections 51, 63, and 63B (punishable with imprisonment up to 3 years and statutory criminal penalties)*.
+  * **The Information Technology Act, 2000 (IT Act, India)** — *Sections 43, 65, and 66 (tampering with computer source documents, cyber misappropriation, and hacking offenses)*.
+  * **Bharatiya Nyaya Sanhita, 2023 (BNS) / Indian Penal Code (IPC)** — *Criminal breach of trust, intellectual property theft, and commercial fraud*.
+  * **International Treaties**: *The Berne Convention for the Protection of Literary and Artistic Works (enforced across 180+ member countries) and the Digital Millennium Copyright Act (DMCA, Title 17 U.S.C.)*.
 
 ---
 
