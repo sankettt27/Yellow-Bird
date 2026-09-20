@@ -8,10 +8,23 @@ __pycache__/
 venv/
 ENV/
 
-# Environment Variables
+# Environment Variables & Sensitive Credentials (Strictly Hidden from Git)
 .env
-.env.local
-.env.production
+.env.*
+*.env
+*.env.*
+*.env.local
+*.env.development
+*.env.production
+frontend/.env
+frontend/.env.*
+backend/.env
+backend/.env.*
+
+# Allow sanitized example templates
+!.env.example
+!*.env.example
+!**/.env.example
 
 # Build Outputs
 dist/

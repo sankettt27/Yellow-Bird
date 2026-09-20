@@ -439,14 +439,16 @@ For school reception desks, transport managers, and dispatch centers, YellowBird
 
 ## ☁️ Cloud & Production Deployments
 
-YellowBird is deployed across modern cloud services:
+YellowBird can be deployed across modern cloud and container services:
 
-| Component | Host / Provider | URL / Endpoint |
+| Component | Architecture Role | Configuration |
 |---|---|---|
-| **Backend API & WebSockets** | **Render** | `https://yellow-bird.onrender.com` |
-| **Admin & Parent Web Portal** | **Vercel** | `https://yellow-bird-eosin.vercel.app` |
-| **Production Database** | **PostgreSQL (Cloud)** | Managed PostgreSQL via asyncpg with SSL encryption |
-| **Interactive API Documentation** | **Swagger UI** | `https://yellow-bird.onrender.com/docs` |
+| **Backend API & WebSockets** | FastAPI Core Engine | Deployable to any cloud host (Render, AWS, GCP, VPS). Base URL configured via `VITE_API_URL`. |
+| **Admin & Parent Web Portal** | React 19 Frontend | Deployable to Vercel, Netlify, or self-hosted static Nginx/Docker. |
+| **Production Database** | Relational Data Store | Managed PostgreSQL via `asyncpg` with SSL encryption. |
+| **Interactive API Documentation** | Swagger & ReDoc UI | Built-in at `/docs` and `/redoc` on your running backend host. |
+
+> 🔒 **Security Notice**: Production URLs, database connection strings, and API secret keys are managed through isolated environment variables and are never committed to source control.
 
 ---
 
@@ -546,67 +548,48 @@ Configure `frontend/.env` depending on your testing environment:
 | **Local Web Browser** | *(Leave commented out)* | Vite dev server automatically proxies `/api/v1` requests to `localhost:8000`. |
 | **Local Wi-Fi Testing (APK on Phone)** | `http://<YOUR_LAPTOP_IP>:8000` | Connect your laptop and phone to the same Wi-Fi network. Find your IP with `ipconfig` (Windows) or `ifconfig` (macOS/Linux). |
 | **Field 4G Cellular Testing** | `https://<TUNNEL_SUBDOMAIN>.loca.lt` | Expose backend via tunnel: `npx localtunnel --port 8000`. |
-| **Production Cloud Mode** | `https://yellow-bird.onrender.com` | Directly connects mobile APK and web apps to the cloud backend. |
+| **Production Cloud Mode** | `https://api.yourdomain.com` | Directly connects mobile APK and web apps to your deployed backend. |
 
 ---
 
-## 🔌 Complete API Reference
+## 🔒 Security & Environment Variables
 
-### Authentication (`/api/v1/auth`)
-- `POST /login` — Authenticate user credentials and receive JWT bearer token.
-- `GET /me` — Fetch currently authenticated user profile.
-- `PATCH /me` — Update user profile details.
-- `POST /register` — Register a new user (Super Admin or School Admin only).
-- `POST /forgot-password` — Request a password reset email.
-- `POST /reset-password` — Complete password reset with secure token.
+YellowBird implements strict security safeguards to protect sensitive endpoints and credentials:
 
-### GPS & Telemetry Engine (`/api/v1/tracking`)
-- `POST /trips/start` — Start a new trip (sets bus/driver status to `ON_TRIP`).
-- `POST /trips/{id}/end` — Complete trip and reset statuses to `IDLE`.
-- `GET /trips/my-active` — Query active trip for currently logged-in driver.
-- `GET /trips/active` — List all active fleet trips across the school.
-- `WS /ws/driver/{bus_id}` — Driver GPS telemetry ingestion stream.
-- `WS /ws/track/{bus_id}` — Parent subscriber channel for live bus updates.
-- `WS /ws/track_all` — Administrative fleet-wide live monitoring channel.
-
-### Parents Directory (`/api/v1/parents`)
-- `GET /` — List parents with pagination (`page`, `page_size`) and search.
-- `POST /` — Register a new parent.
-- `POST /upload` — Bulk upload parents via Excel spreadsheet (`.xlsx`).
-- `GET /me/bus-info` — Comprehensive payload for parents (students, assigned buses, driver, stops).
-- `GET /{id}/connections` — Inspect full relationship chain for a specific parent.
-
-### Students Directory (`/api/v1/students`)
-- `GET /` — List students with pagination, search, class filter, and bus filter.
-- `POST /` — Create student record with parent, bus, and stop assignments.
-- `POST /upload` — Bulk upload students via Excel spreadsheet (`.xlsx`).
-- `PATCH /{id}` — Update student enrollment, bus, or stop details.
-- `DELETE /{id}` — Remove student from registry.
-
-### Fleet & Operations
-- `/api/v1/buses` — Bus fleet CRUD, status queries, driver assignments.
-- `/api/v1/drivers` — Driver roster, license numbers, phone contacts.
-- `/api/v1/routes` — Route lines, waypoints, pickup stop sequencing.
-- `/api/v1/notifications` — Notification dispatch and user notification feeds.
-- `/api/v1/reports` — Fleet telemetry summaries, distance, and duration reports.
+- **Strict Git Exclusion**: All `.env` files (`.env`, `.env.*`, `frontend/.env`, `backend/.env`) are strictly ignored by `.gitignore` and never committed to GitHub.
+- **Sanitized Templates**: Only `.env.example` templates containing generic placeholders are tracked in version control.
+- **Zero Hardcoded Secrets**: Production database connection strings, JWT secret keys, and SMTP email credentials must be supplied via server environment variables or isolated `.env` files.
 
 ---
 
-## 🔑 Demo Credentials
+## 🔌 API Architecture Overview
 
-The platform seeds pre-configured demo accounts for immediate testing:
+The backend exposes a modular, documented REST and WebSocket API:
 
-| Role | Email | Password | Details |
+- **Authentication (`/api/v1/auth`)**: JWT-based login, profile query, password reset.
+- **GPS & Telemetry (`/api/v1/tracking`)**: Bi-directional WebSockets (`/ws/driver/{bus_id}`, `/ws/track/{bus_id}`, `/ws/track_all`), trip lifecycle start/end, breadcrumbs.
+- **Parents (`/api/v1/parents`)**: Directory listing, student-bus interconnects, bulk Excel upload (`/upload`).
+- **Students (`/api/v1/students`)**: Student roster, bus and pickup stop associations, bulk Excel upload (`/upload`).
+- **Fleet & Infrastructure (`/api/v1/buses`, `/api/v1/drivers`, `/api/v1/routes`, `/api/v1/schools`)**: Vehicle fleet, route lines, stop sequences, multi-tenant school controls.
+- **Notifications & Reports (`/api/v1/notifications`, `/api/v1/reports`)**: Proximity arrival alerts and fleet mileage/trip duration analytics.
+
+Interactive Swagger documentation is available locally at `http://localhost:8000/docs`.
+
+---
+
+## 🔑 Demo & Test Accounts
+
+During initial database seeding, the system provisions local development accounts for testing:
+
+| Role | Default Email | Password | Scope |
 |---|---|---|---|
-| **Super Admin** | `superadmin@smarttransport.com` | `admin123` | Platform-wide oversight |
-| **School Admin** | `admin@greenfield.edu.in` | `admin123` | Greenfield Public School Administrator |
-| **School Admin** | `admin@dps.edu` | `admin123` | Delhi Public School Administrator |
-| **Driver** | `driver1@greenfield.edu.in` | `driver123` | Assigned to Bus BUS-001 (Tata Starbus) |
-| **Driver** | `driver2@greenfield.edu.in` | `driver123` | Assigned to Bus BUS-002 (Ashok Leyland) |
-| **Driver** | `bus111@gmail.com` | `driver123` | Dedicated test driver account |
-| **Parent** | `parent1@gmail.com` | `parent123` | Parent of Anita Verma (Bus BUS-001) |
-| **Parent** | `parent2@gmail.com` | `parent123` | Parent of Vikram Singh (Bus BUS-002) |
-| **Parent** | `sachin.shelke@gmail.com` | `parent123` | Parent of Raj Shelke |
+| **Super Admin** | `superadmin@smarttransport.com` | *(configured in .env / seed)* | Global platform oversight |
+| **School Admin** | `admin@greenfield.edu.in` | *(configured in .env / seed)* | Greenfield Public School Administrator |
+| **School Admin** | `admin@dps.edu` | *(configured in .env / seed)* | Delhi Public School Administrator |
+| **Driver** | `driver1@greenfield.edu.in` | *(configured in .env / seed)* | Route 1 Driver (Tata Starbus) |
+| **Driver** | `driver2@greenfield.edu.in` | *(configured in .env / seed)* | Route 2 Driver (Ashok Leyland) |
+| **Parent** | `parent1@gmail.com` | *(configured in .env / seed)* | Parent of Anita Verma (BUS-001) |
+| **Parent** | `parent2@gmail.com` | *(configured in .env / seed)* | Parent of Vikram Singh (BUS-002) |
 
 ---
 

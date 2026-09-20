@@ -184,22 +184,25 @@ def _build_otp_email_html(otp_code: str, user_name: str = "School Administrator"
 
 
 async def _send_via_vercel_relay(to: str, subject: str, html_body: str) -> bool:
-    """Attempt sending through Vercel HTTPS serverless relay (bypasses Render free-tier SMTP port blocks)."""
+    """Attempt sending through HTTPS serverless relay (bypasses cloud SMTP port blocks)."""
+    settings = get_settings()
+    relay_url = f"{settings.FRONTEND_URL.rstrip('/')}/api/send-email"
+    relay_secret = getattr(settings, "JWT_SECRET_KEY", "yellowbird-auth-secret-2024")
     try:
         import httpx
         async with httpx.AsyncClient(timeout=12.0) as client:
             res = await client.post(
-                "https://yellow-bird-eosin.vercel.app/api/send-email",
+                relay_url,
                 json={
                     "to": to,
                     "subject": subject,
                     "html": html_body,
-                    "secret": "yellowbird-auth-secret-2024",
+                    "secret": relay_secret,
                 },
-                headers={"X-YellowBird-Secret": "yellowbird-auth-secret-2024"},
+                headers={"X-YellowBird-Secret": relay_secret},
             )
             if res.status_code == 200:
-                print(f"[EMAIL RELAY] Sent successfully via Vercel HTTPS relay to {to}")
+                print(f"[EMAIL RELAY] Sent successfully via HTTPS relay to {to}")
                 return True
             else:
                 print(f"[EMAIL RELAY] Vercel returned status {res.status_code}: {res.text[:150]}")
