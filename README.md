@@ -2,12 +2,15 @@
 
 <div align="center">
 
-**A production-ready, zero-hardware school bus tracking platform with real-time GPS streaming, native Android mobile apps, and parent notifications.**
+**A production-grade, zero-hardware school bus tracking and fleet management ecosystem with real-time GPS streaming, standalone Android mobile apps, desktop administrator portals, and parent arrival notifications.**
 
-[![React](https://img.shields.io/badge/Frontend-React%2019%20+%20TypeScript-61DAFB?logo=react&logoColor=white)](#-tech-stack)
-[![FastAPI](https://img.shields.io/badge/Backend-FastAPI%20(Python)-009688?logo=fastapi&logoColor=white)](#-tech-stack)
-[![Capacitor](https://img.shields.io/badge/Mobile-Capacitor%20Android-119EFF?logo=capacitor&logoColor=white)](#-mobile-app-android)
+[![React](https://img.shields.io/badge/Frontend-React%2019%20+%20TypeScript-61DAFB?logo=react&logoColor=white)](#-technology-stack)
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI%20(Python)-009688?logo=fastapi&logoColor=white)](#-technology-stack)
+[![Capacitor](https://img.shields.io/badge/Mobile-Capacitor%20Android-119EFF?logo=capacitor&logoColor=white)](#-native-android-mobile-app)
+[![Electron](https://img.shields.io/badge/Desktop-Electron%20Windows-47848F?logo=electron&logoColor=white)](#-desktop-admin-app-electron)
 [![WebSockets](https://img.shields.io/badge/Streaming-Native%20WebSockets-FF6B6B)](#-real-time-websocket-architecture)
+[![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL%20+%20asyncpg-336791?logo=postgresql&logoColor=white)](#-database-architecture)
+[![TailwindCSS](https://img.shields.io/badge/Styling-TailwindCSS%20+%20Framer%20Motion-38B2AC?logo=tailwindcss&logoColor=white)](#-technology-stack)
 [![License](https://img.shields.io/badge/License-MIT-F59E0B)](#)
 
 </div>
@@ -16,129 +19,290 @@
 
 ## 📖 Table of Contents
 
-- [Overview](#-overview)
-- [Key Features](#-key-features)
-- [System Architecture](#-system-architecture)
-- [Tech Stack](#-tech-stack)
+- [Executive Overview](#-executive-overview)
+- [Key Features & Capabilities](#-key-features--capabilities)
+- [End-to-End System Architecture](#-end-to-end-system-architecture)
+- [Data Flow & Telemetry Pipeline](#-data-flow--telemetry-pipeline)
+- [User Roles & Experience Portals](#-user-roles--experience-portals)
+  - [Driver Experience](#1-driver-mobile-experience)
+  - [Parent Experience](#2-parent-mobile--web-experience)
+  - [School Administrator Experience](#3-school-administrator-portal)
+  - [Super Administrator Experience](#4-super-administrator-portal)
+- [Core Engineering & Architecture Logic](#-core-engineering--architecture-logic)
+  - [Real-Time WebSocket Engine](#1-real-time-websocket-engine)
+  - [Trip Lifecycle & Safety Architecture](#2-trip-lifecycle--safety-architecture)
+  - [Driver Trip Logout Guard](#3-driver-trip-logout-guard)
+  - [Crash-Proof Excel Bulk Ingestion Pipeline](#4-crash-proof-excel-bulk-ingestion-pipeline)
+  - [Admin Session Isolation Guard](#5-admin-session-isolation-guard)
+  - [Pagination & Server State Synchronization](#6-pagination--server-state-synchronization)
+- [Technology Stack](#-technology-stack)
 - [Project Directory Structure](#-project-directory-structure)
-- [User Roles & Portals](#-user-roles--portals)
-- [Real-Time WebSocket Architecture](#-real-time-websocket-architecture)
-- [Trip Lifecycle & Safety Architecture](#-trip-lifecycle--safety-architecture)
-- [Mobile App (Android)](#-mobile-app-android)
-- [Getting Started](#-getting-started)
+- [Native Android Mobile App](#-native-android-mobile-app)
+- [Desktop Admin App (Electron)](#-desktop-admin-app-electron)
+- [Cloud & Production Deployments](#-cloud--production-deployments)
+- [Getting Started & Local Setup](#-getting-started--local-setup)
   - [Prerequisites](#prerequisites)
   - [1. Backend Setup](#1-backend-setup)
   - [2. Frontend Web Setup](#2-frontend-web-setup)
-  - [3. Android APK Build](#3-android-apk-build)
+  - [3. Android APK Compilation](#3-android-apk-compilation)
   - [4. Docker Deployment](#4-docker-deployment)
 - [Network & Field Testing Modes](#-network--field-testing-modes)
-- [API Reference](#-api-reference)
+- [Complete API Reference](#-complete-api-reference)
 - [Demo Credentials](#-demo-credentials)
 - [Troubleshooting & FAQ](#-troubleshooting--faq)
-- [Contributing & License](#-contributing--license)
+- [License](#-license)
 
 ---
 
-## 🎯 Overview
+## 🎯 Executive Overview
 
-Traditional school bus tracking requires installing dedicated, costly GPS hardware into every bus with recurring monthly tracking subscriptions.
+Traditional school transportation tracking systems rely on expensive hardware GPS black-boxes wired directly into vehicle batteries. These devices require costly SIM card subscriptions, physical installation downtime, high upfront capital expenditure, and frequent technician maintenance.
 
-**YellowBird solves this with a modern, software-driven approach:**
-- **Zero Hardware Investment**: Turns any driver’s smartphone into an accurate GPS transmitter.
-- **Sub-Second Streaming**: Broadcasts live coordinates, speed, and heading over persistent WebSockets every 2–3 seconds.
-- **Parent Peace of Mind**: Interactive live map showing the bus gliding smoothly, accurate ETA calculations, and automatic notifications when the bus is approaching pickup stops.
-- **Cross-Platform**: Operates as a high-performance web dashboard on desktop and a standalone native Android application on mobile via Capacitor.
+**YellowBird completely eliminates hardware overhead through a pure software-driven architecture:**
+
+1. **Zero Hardware Investment**: Converts any driver's existing smartphone into a precision GPS telemetry transmitter using native browser and Capacitor Geolocation APIs.
+2. **Sub-Second Streaming**: Pushes location, heading, velocity, and accuracy data over persistent full-duplex WebSockets every 2–3 seconds.
+3. **Ghost-Free Tracking**: Buses are rendered on parent maps **strictly** when a trip is active and streaming live coordinates. Stale, offline, or parked buses never clutter the parent interface.
+4. **Consumer-Grade Reliability**: Built-in state recovery, screen wake lock, nested database savepoints, and session guards guarantee that unstable cellular signals, accidental reboots, or malformed data will not disrupt school operations.
+5. **Cross-Platform Ecosystem**: A unified modern codebase delivering responsive web dashboards, native Android APKs, and dedicated Windows Electron desktop executables.
 
 ---
 
-## ✨ Key Features
+## ✨ Key Features & Capabilities
 
 ### 🚌 Driver Experience
-- **One-Tap Trip Start/End**: Instant trip activation with automated status broadcasting.
-- **Bulletproof Trip Persistence**: Trips survive app closes, accidental terminations, and phone reboots with automatic state recovery (`localStorage` + `GET /api/v1/tracking/trips/my-active`).
-- **Resilient GPS Lock**: Built-in infinite timeout configuration (`timeout: 2147483647`) to prevent satellite drops indoors or during startup delays.
-- **Screen Wake Lock**: Keeps the driver's device screen alive during trips to ensure continuous background GPS transmission.
-- **Live Route Builder**: Allows drivers or administrators to record brand new bus routes and drop geo-tagged bus stops by driving the physical path.
+- **One-Tap Trip Operation**: Single-button activation to start and complete scheduled bus routes.
+- **Continuous Background Transmission**: Screen wake lock prevents the OS from suspending GPS services while the bus is in transit.
+- **Fail-Safe Session Recovery**: Trips survive phone lock, browser refresh, process kills, and app reboots via persisted local state (`yb_active_trip`) paired with server state reconciliation (`GET /api/v1/tracking/trips/my-active`).
+- **Logout Lock Guard**: Sign-out button is physically disabled with an amber warning banner during active trips; idle sign-outs require animated confirmation to avoid accidental disconnects.
+- **Speed Monitoring**: Built-in speed tracking alerts when vehicles exceed safety thresholds (default 60 km/h).
+- **Single-Device Enforcement**: Driver accounts are locked to a single active session token (`session_token`), preventing multiple phones from transmitting conflicting coordinates.
 
 ### 👨‍👩‍👧 Parent Experience
-- **Strict Live-Only Bus Visibility**: The bus marker is rendered **only** when the driver is actively on trip and broadcasting live data — eliminating "zombie/stale" bus markers.
-- **Instant Map Center & Redirection**: Tapping the **Refresh** button immediately re-centers the map directly to the parent's live GPS position.
-- **Dynamic Live ETA & Distance**: Instant Haversine calculations providing real-time distance and arrival estimates.
-- **Push & In-App Alerts**: Automated notifications when the bus starts its trip, arrives near the stop (< 500m), and completes the route.
-- **Direct Driver Contact**: One-tap phone calling directly from the tracking card.
+- **Live Interactive Map**: Powered by Leaflet with smooth coordinate interpolation, dynamic rotation angles, and custom bus markers.
+- **Accurate Real-Time ETA**: Dynamic Haversine algorithms recalculate driving distance and estimated time of arrival to the student's designated pickup/drop stop.
+- **Proximity Audio & Visual Alerts**: Triggers notifications when the vehicle crosses the 500-meter proximity threshold of the student's stop.
+- **Instant Map Center**: Tapping the "Refresh" button instantly re-centers and snaps the map directly onto the parent's current position or the moving bus.
+- **Multi-Child Switcher**: Parents with multiple enrolled children can seamlessly toggle between buses with a single tap.
+- **One-Tap Driver Calling**: Direct cellular phone link on the tracking card allows parents to call the assigned driver instantly without searching contacts.
 
-### 🏫 School & Fleet Management
-- **Centralized Fleet Oversight**: Real-time status for all buses, active routes, and drivers.
-- **Multi-Child Support**: Parents with multiple students can switch between child buses with a single click.
-- **Single-Device Driver Session Enforcement**: Guards against duplicate simultaneous logins, ensuring accurate single-source GPS broadcasting.
-- **Automated Stale Trip Cleanup**: Detects and auto-completes abandoned trips older than 12 hours.
+### 🏫 School Administrator Experience
+- **Live Fleet Control Center**: Real-time status matrix showing all buses, routes, drivers, and on-trip indicators on a unified live map.
+- **Crash-Proof Excel Bulk Upload**: Seamlessly import hundreds of students and parents with nested database savepoints (`SAVEPOINT`), automatic duplicate deduplication, and cached bcrypt hashing.
+- **Complete Rosters with Pagination**: Parents and Students directories include 20/50/100 page size options, page numbers, search filters, and one-click manual refresh.
+- **Interactive Route & Stop Builder**: Design bus routes, sequence pickup stops, and assign geocoordinates directly on the map.
+- **Student-Bus-Stop Assignment**: Connect students to specific parents, buses, pickup stops, and drop stops for complete end-to-end accountability.
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ End-to-End System Architecture
 
 ```mermaid
-graph TD
-    subgraph Drivers["Driver Mobile Device"]
-        D_GPS[Capacitor Geolocation API]
-        D_UI[Driver Dashboard React + Zustand]
-        D_WS[WebSocket Client Transmitter]
-        D_GPS -->|Lat/Lng/Speed/Heading| D_UI
-        D_UI -->|JSON Payload Every 2-3s| D_WS
-    end
-
-    subgraph Backend["FastAPI Backend Server"]
-        API[REST API Router]
-        WS_MGR[WebSocket Connection Manager]
-        DB[(SQLite / PostgreSQL)]
+flowchart TB
+    subgraph MobileDriver["Driver Mobile App (Android / Web)"]
+        D_GPS["@capacitor/geolocation\nHigh Accuracy GPS Engine"]
+        D_Store["Zustand Trip Store\nLocalStorage Backup"]
+        D_Wake["Screen Wake Lock API"]
+        D_WS["Native WebSocket Client\nAuto-Reconnect Engine"]
         
-        D_WS -->|/ws/driver/bus_id| WS_MGR
-        WS_MGR -->|Persist Breadcrumbs| DB
-        API <-->|SQLAlchemy 2.0 Async| DB
+        D_GPS -->|Lat, Lng, Speed, Bearing| D_Store
+        D_Store -->|Payload Every 2-3s| D_WS
+        D_Wake -.->|Keep Awake| D_GPS
     end
 
-    subgraph Parents["Parent Mobile / Web Device"]
-        P_UI[Parent Tracking Portal]
-        P_WS[WebSocket Subscriber Client]
-        P_MAP[Leaflet Interactive Map]
+    subgraph CloudBackend["FastAPI Backend Server (Render / Cloud)"]
+        WS_MGR["WebSocket ConnectionManager\nChannel Router & In-Memory Cache"]
+        API_ROUTER["FastAPI REST Endpoints\nRBAC & Session Validation"]
+        GEO_ENGINE["Routing & Proximity Engine\nHaversine Distance & Stop Detection"]
+        ORM["SQLAlchemy 2.0 (Async)\nSavepoints & Atomic Transactions"]
         
-        WS_MGR -->|Broadcast Live Coordinates| P_WS
-        P_WS -->|Update Live State| P_UI
-        P_UI -->|Render Marker & Route| P_MAP
+        D_WS -->|/api/v1/tracking/ws/driver/{bus_id}| WS_MGR
+        WS_MGR -->|Telemetry Ingestion| GEO_ENGINE
+        GEO_ENGINE -->|Persist Breadcrumbs| ORM
+        API_ROUTER <-->|Async Queries| ORM
     end
 
-    subgraph Admins["School Admin Dashboard"]
-        A_UI[Admin Fleet Monitor]
-        API -->|Fetch Stats & Fleet Data| A_UI
-        WS_MGR -->|Global Bus Updates| A_UI
+    subgraph DatabaseEngine["Database Storage"]
+        DB[(PostgreSQL + asyncpg\nSQLite for Dev)]
+        ORM <--> DB
     end
+
+    subgraph ClientConsumers["Consumers & Portals"]
+        subgraph ParentApp["Parent Portal (Android / Mobile Web)"]
+            P_WS["WebSocket Subscriber Client"]
+            P_Map["Leaflet Map\nSmooth Marker Interpolation"]
+            P_UI["Live ETA & Stop Notifications"]
+            P_WS --> P_UI
+            P_UI --> P_Map
+        end
+
+        subgraph AdminPortal["Admin Portal (Desktop Electron / Web)"]
+            A_WS["WebSocket Global Fleet Client"]
+            A_UI["Fleet Radar & Management Dashboard"]
+            A_WS --> A_UI
+        end
+    end
+
+    WS_MGR -->|/api/v1/tracking/ws/track/{bus_id}| P_WS
+    WS_MGR -->|/api/v1/tracking/ws/track_all| A_WS
+    API_ROUTER -.->|REST Queries| ParentApp
+    API_ROUTER -.->|REST Queries| AdminPortal
 ```
 
 ---
 
-## 🚀 Tech Stack
+## 🔄 Data Flow & Telemetry Pipeline
 
-### Frontend & Mobile
-| Technology | Purpose | Key Details |
-|---|---|---|
-| **React 19 + TypeScript** | Core UI Library | Strict typing, modern hooks, functional architecture |
-| **Capacitor 8** | Native Mobile Runtime | Native Android geolocation, push & local notifications |
-| **Vite 6** | Build Tooling | High-speed HMR, optimized production bundling |
-| **Tailwind CSS** | Styling System | Responsive mobile-first layout, custom glassmorphism |
-| **Zustand** | State Management | Persisted trip store (`yb_active_trip`), auth store |
-| **TanStack Query v5** | Server State Sync | Automatic background refetching and caching |
-| **Leaflet & React-Leaflet** | Interactive Maps | Custom SVG bus markers, smooth CSS transition easing |
-| **Framer Motion** | Micro-Animations | Smooth card collapses, pulsing status halos, modals |
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Driver as Driver App
+    participant Backend as FastAPI Server
+    participant DB as PostgreSQL
+    actor Parent as Parent App
+    actor Admin as Admin Portal
+
+    Note over Driver,Backend: 1. Trip Initialization
+    Driver->>Backend: POST /api/v1/tracking/trips/start {driver_id, bus_id, route_id}
+    Backend->>DB: Check existing IN_PROGRESS trips (Recover if exists)
+    Backend->>DB: Update Bus & Driver status -> ON_TRIP
+    Backend-->>Driver: 200 OK {trip_id, status: "in_progress"}
+
+    Note over Driver,Admin: 2. Real-Time Telemetry Loop (Every 2-3s)
+    Driver->>Backend: WS /ws/driver/{bus_id} {lat, lng, speed, heading, trip_id}
+    Backend->>Backend: Store coordinates in Memory Cache
+    Backend->>DB: Async insert into trip_locations (Breadcrumb)
+    Backend->>Backend: Calculate Haversine distance to next stops
+    
+    par Broadcast to Subscribers
+        Backend->>Parent: WS /ws/track/{bus_id} {lat, lng, speed, heading, eta}
+        Backend->>Admin: WS /ws/track_all {bus_id, lat, lng, speed, status}
+    end
+
+    Note over Parent: 3. Dynamic UI Updates
+    Parent->>Parent: Smoothly animate Leaflet bus marker along road
+    Parent->>Parent: If distance < 500m -> Trigger Proximity Notification
+
+    Note over Driver,Backend: 4. Trip Completion
+    Driver->>Backend: POST /api/v1/tracking/trips/{id}/end
+    Backend->>DB: Update Trip -> COMPLETED, Bus/Driver -> IDLE
+    Backend->>Parent: WS Broadcast: Bus status -> "completed" (Remove marker)
+    Backend->>Admin: WS Broadcast: Fleet matrix updated
+```
+
+---
+
+## 👥 User Roles & Experience Portals
+
+```
+┌──────────────────────────────────────────────────────────────────────────────┐
+│                            YellowBird Platform                               │
+├────────────────────┬────────────────────┬──────────────────┬─────────────────┤
+│    Super Admin     │    School Admin    │      Driver      │     Parent      │
+├────────────────────┼────────────────────┼──────────────────┼─────────────────┤
+│ • Multi-school     │ • Fleet Management │ • 1-Tap Trip     │ • Live Bus Map  │
+│ • System analytics │ • Driver/Bus pair  │ • Auto-GPS Stream│ • Dynamic ETA   │
+│ • Tenant creation  │ • Route / Stop Seq │ • Passenger List │ • Proximity Bell│
+│ • Platform health  │ • Excel Bulk Upload│ • Screen WakeLock│ • Direct Calling│
+│ • Global oversight │ • Desktop App Exe  │ • Trip Safe Lock │ • Multi-Child   │
+└────────────────────┴────────────────────┴──────────────────┴─────────────────┘
+```
+
+### 1. Driver Mobile Experience
+- **Designed for Road Safety**: High-contrast, large-touch interfaces optimized for in-vehicle mounted smartphones.
+- **Driver Profile & Preferences**: Audio alerts toggle, night mode, assigned bus specifications, and active school selection.
+- **Interactive Student Manifest**: Check off students as they board and disembark at designated route stops.
+- **Route Stop Sequence**: Step-by-step stop overview with student counts and scheduled times.
+
+### 2. Parent Mobile & Web Experience
+- **Live Visual Tracking**: Watch the bus glide smoothly on road networks with directional heading arrow markers.
+- **Zero Confusion Guarantee**: When the bus is offline, a clear informative card states *"Bus is currently offline / awaiting departure"*, and the map safely centers on the parent's home stop.
+- **Student Profile**: Shows assigned bus number, driver photo/name, route name, pickup stop, and drop stop.
+
+### 3. School Administrator Portal
+- **Fleet Radar**: High-density interactive map showing every operating vehicle in the district.
+- **Excel Ingestion Hub**: Upload spreadsheets containing parents and students in seconds.
+- **Role Administration**: Create and manage credentials for drivers, staff, and parents.
+- **Exportable Metrics**: View completed trip logs, duration, average speeds, and mileage.
+
+### 4. Super Administrator Portal
+- **Multi-Tenant Hierarchy**: Create and isolate multiple independent school branches or school districts.
+- **Global Overview**: Real-time cross-school metrics and active vehicle counters.
+
+---
+
+## ⚙️ Core Engineering & Architecture Logic
+
+### 1. Real-Time WebSocket Engine
+YellowBird avoids polling delays and server load by utilizing native WebSockets through an async `ConnectionManager`:
+- **Driver Channel** (`/api/v1/tracking/ws/driver/{bus_id}?token={JWT}`): Authenticates driver credentials and accepts telemetry packets every 2–3 seconds.
+- **Parent Channel** (`/api/v1/tracking/ws/track/{bus_id}`): Dispatches targeted location updates directly to parents linked to that specific bus.
+- **Fleet Broadcast Channel** (`/api/v1/tracking/ws/track_all`): Delivers lightweight telemetry arrays across all active vehicles to administrative monitors.
+- **Graceful Reconnection**: Both driver and parent frontend stores automatically attempt exponential backoff reconnection if mobile cellular connectivity flickers in dead zones.
+
+### 2. Trip Lifecycle & Safety Architecture
+- **Automatic Recovery on Launch**: When a driver opens the app, `GET /api/v1/tracking/trips/my-active` queries the database. If an in-progress trip exists, the client resumes the active UI state and location tracking automatically without driver intervention.
+- **Duplicate Prevention**: Calling `POST /api/v1/tracking/trips/start` checks for existing active trips for the driver and returns the ongoing trip rather than creating redundant database records.
+- **Stale Trip Auto-Cleanup**: The system automatically completes any abandoned trip older than 12 hours, ensuring the fleet remains synchronized.
+- **Timezone Normalization**: All database timestamp comparisons utilize UTC conversion (`_calculate_trip_age_hours`), avoiding errors across SQLite naive dates and timezone-aware objects.
+
+### 3. Driver Trip Logout Guard
+Drivers must never accidentally sign out while carrying students:
+- **State Audit**: [DriverProfileTab.tsx](file:///d:/Real-Time-Bus-Tracker-main/frontend/src/pages/driver/DriverProfileTab.tsx) observes `currentTrip` and `isTracking` from `useTripStore`.
+- **Physical Lockout**: While a trip is in progress, the "Sign Out" button is visually disabled (greyed out, `cursor-not-allowed`) and accompanied by an amber alert banner: *"Sign out is disabled while a trip is running. End the trip first."*
+- **Accidental Click Interception**: If tapped, a toast alert blocks execution.
+- **Confirmation Modal**: When idle, tapping "Sign Out" opens a confirmation modal with "Cancel" and "Yes, Sign Out" options to prevent accidental logouts.
+
+### 4. Crash-Proof Excel Bulk Ingestion Pipeline
+To allow administrators to upload entire school rosters without technical failures:
+- **Supported Columns**:
+  - Parents: `Parent Name`, `Email`, `Password`
+  - Students: `Student Name`, `Class`, `Section`, `Roll No`
+- **Case-Insensitive & Whitespace Trimming**: Automatically normalizes names and emails (`func.lower(func.trim(User.email)) == email_str`) to avoid duplicate key violations.
+- **In-Batch Duplicate Detection**: Tracks seen identifiers in memory; duplicate rows inside the spreadsheet are skipped before touching the database.
+- **PostgreSQL Savepoints (`SAVEPOINT`)**: Each row is wrapped in `async with db.begin_nested():`. If a row triggers an `IntegrityError`, PostgreSQL rolls back **only that individual row's savepoint**. The script increments `skipped_count` and continues importing the remaining rows. The entire upload never fails.
+- **Bcrypt Password Hash Caching**: Repeated or default passwords are hashed once and cached in memory, slashing bulk upload times from minutes to seconds and preventing HTTP timeouts on cloud servers.
+
+### 5. Admin Session Isolation Guard
+To prevent desktop school computers from loading stale parent or driver accounts:
+- **Electron Guard**: On launch, [electron/main.js](file:///d:/Real-Time-Bus-Tracker-main/electron/main.js) runs an automated script inside `webContents` that inspects `localStorage`. If a non-admin role (`driver` or `parent`) is detected, it wipes tokens and reloads cleanly into the administrator login page.
+- **Frontend IIFE Guard**: An inline boot guard inside `AppAdmin.tsx` executes before Zustand initializes, purging any non-admin sessions from storage.
+
+### 6. Pagination & Server State Synchronization
+To deliver high-performance directory management:
+- **Pagination Controls**: Both [ParentsPage.tsx](file:///d:/Real-Time-Bus-Tracker-main/frontend/src/pages/parents/ParentsPage.tsx) and [StudentsPage.tsx](file:///d:/Real-Time-Bus-Tracker-main/frontend/src/pages/students/StudentsPage.tsx) feature interactive pagination bars (Previous / Next, page numbers `1, 2, 3...`, item count summaries).
+- **Custom Page Sizes**: Dropdown selection for **20, 50, or 100** items per page.
+- **One-Click Refresh**: Header refresh button allows administrators to force-refetch live server state instantly.
+
+---
+
+## 🚀 Technology Stack
+
+### Frontend & Client Runtimes
+| Technology | Version | Purpose | Architectural Rationale |
+|---|---|---|---|
+| **React** | 19.x | Web & Mobile UI | Component-based, functional architecture with hooks |
+| **TypeScript** | 5.x | Type Safety | End-to-end type safety, typed API models and schemas |
+| **Capacitor** | 8.x | Native Android Bridge | Hardware GPS, native notifications, foreground service |
+| **Electron** | Latest | Desktop Windows Wrapper | Packaged desktop application for school administration |
+| **Vite** | 6.x | Bundler & Build Tool | Rapid Hot Module Replacement and optimized chunking |
+| **Tailwind CSS** | 3.4 | Styling System | Modern responsive utility system with dark mode |
+| **Zustand** | 5.x | Client State Management | Minimalist persisted stores (`authStore`, `tripStore`) |
+| **TanStack Query** | 5.x | Server State & Caching | Automatic query invalidation, caching, background fetch |
+| **Leaflet / React-Leaflet** | 1.9 / 5.0 | Interactive Maps | Lightweight, responsive mapping with smooth SVG rotation |
+| **Framer Motion** | 12.x | UI Animations | Fluid screen transitions, modal animations, pulse alerts |
 
 ### Backend & Infrastructure
-| Technology | Purpose | Key Details |
-|---|---|---|
-| **FastAPI** | Web Framework | High-performance async Python framework with OpenAPI docs |
-| **SQLAlchemy 2.0** | Async ORM | Async engine supporting SQLite (dev) and PostgreSQL (prod) |
-| **Native WebSockets** | Real-Time Transport | In-memory broadcast channels with disconnect recovery |
-| **JWT (python-jose)** | Authentication | Role-based token authentication with session tokens |
-| **Passlib (bcrypt)** | Password Security | Secure password hashing |
-| **Docker & Compose** | Containerization | Multi-container full stack deployment |
+| Technology | Version | Purpose | Architectural Rationale |
+|---|---|---|---|
+| **FastAPI** | 0.110+ | REST & WebSocket Server | Asynchronous Python framework with auto OpenAPI docs |
+| **SQLAlchemy** | 2.0+ | Asynchronous ORM | Non-blocking async/await queries, nested savepoints |
+| **asyncpg** | Latest | PostgreSQL Async Driver | Ultra high-performance async communication with Postgres |
+| **WebSockets** | Native | Real-Time Transport | Bi-directional streaming with low overhead |
+| **Passlib (Bcrypt)** | Latest | Password Security | Industry-standard salt & hash password protection |
+| **Python-JOSE** | Latest | JWT Authentication | Stateless bearer token authentication |
+| **OpenPyXL** | Latest | Excel Ingestion | Robust processing of `.xlsx` spreadsheets |
+| **Docker & Compose** | Latest | Containerization | Isolated multi-container environments for backend/frontend |
 
 ---
 
@@ -146,213 +310,228 @@ graph TD
 
 ```
 Real-Time-Bus-Tracker-main/
-├── backend/
+├── YellowBird-final.apk            # Pre-compiled standalone Android APK (8 MB)
+├── Create-Desktop-Shortcut.bat     # Windows 1-click installer for desktop admin portal
+├── create-shortcuts.ps1            # PowerShell engine for Desktop/Start Menu shortcuts
+│
+├── electron/                       # Electron Desktop Application
+│   ├── main.js                     # Main process: session guards & window management
+│   ├── preload.js                  # Preload sandbox script
+│   ├── icon.ico                    # Windows application icon
+│   └── package.json                # Electron configuration & build scripts
+│
+├── backend/                        # FastAPI Backend Application
 │   ├── app/
 │   │   ├── api/
-│   │   │   ├── deps.py             # Auth & RBAC dependencies
-│   │   │   └── routes/
-│   │   │       ├── auth.py         # Login, register, profile
-│   │   │       ├── buses.py        # Bus fleet management
-│   │   │       ├── dashboard.py    # Admin overview metrics
-│   │   │       ├── drivers.py      # Driver profiles & assignment
-│   │   │       ├── notifications.py# Parent & system notifications
-│   │   │       ├── parents.py      # Parent profiles & student link
-│   │   │       ├── routes.py       # Routes & stop sequences
-│   │   │       ├── schools.py      # Multi-school management
-│   │   │       ├── students.py     # Student records & stop pairing
-│   │   │       ├── tracking.py     # GPS WebSockets & trip lifecycle
-│   │   │       └── users.py        # User administration
+│   │   │   ├── deps.py             # Auth dependencies (get_current_user, require_admin)
+│   │   │   └── routes/             # REST API & WebSocket route handlers
+│   │   │       ├── auth.py         # Login, JWT, registration, password reset
+│   │   │       ├── buses.py        # Bus fleet CRUD and assignment
+│   │   │       ├── dashboard.py    # School admin metric summaries
+│   │   │       ├── driver_routes.py# Driver route assignments
+│   │   │       ├── drivers.py      # Driver profiles & licensing
+│   │   │       ├── notifications.py# Notification inbox & dispatch
+│   │   │       ├── parents.py      # Parent management & Excel upload
+│   │   │       ├── reports.py      # Fleet logs and analytics
+│   │   │       ├── routes.py       # Route builder & stop sequence CRUD
+│   │   │       ├── schools.py      # Multi-school tenant management
+│   │   │       ├── settings.py     # Administrative settings
+│   │   │       ├── students.py     # Student enrollment & Excel upload
+│   │   │       ├── tracking.py     # GPS WebSockets, trips start/end, breadcrumbs
+│   │   │       └── users.py        # System user directory & status toggles
 │   │   ├── core/
-│   │   │   ├── config.py           # App settings & env loading
-│   │   │   ├── database.py         # Async engine & session factory
-│   │   │   ├── routing.py          # Haversine distance functions
-│   │   │   └── security.py         # JWT generation & password hashing
-│   │   ├── models/                 # SQLAlchemy 2.0 ORM models
-│   │   ├── schemas/                # Pydantic schemas (request/response)
+│   │   │   ├── config.py           # Pydantic Settings & environment parsing
+│   │   │   ├── database.py         # Async engine, connection pool, session factory
+│   │   │   ├── routing.py          # Haversine distance & ETA calculations
+│   │   │   └── security.py         # Password hashing & JWT token operations
+│   │   ├── models/                 # SQLAlchemy 2.0 ORM Declarative Models
+│   │   │   ├── bus.py              # Bus entity
+│   │   │   ├── driver.py           # Driver extension profile
+│   │   │   ├── enums.py            # UserRole, TripStatus, BusStatus
+│   │   │   ├── notification.py     # Notification alerts
+│   │   │   ├── parent.py           # Parent extension profile
+│   │   │   ├── route.py            # Route, RouteStop, RouteProgress
+│   │   │   ├── school.py           # School tenant entity
+│   │   │   ├── student.py          # Student entity with bus & stop links
+│   │   │   ├── trip.py             # Trip and TripLocation breadcrumbs
+│   │   │   └── user.py             # Core unified user table
+│   │   ├── schemas/                # Pydantic Request & Response Schemas
 │   │   ├── websockets/
-│   │   │   └── manager.py          # ConnectionManager for live bus channels
-│   │   ├── main.py                 # FastAPI application entry point
-│   │   └── seed.py                 # Seed script for initial demo data
+│   │   │   └── manager.py          # ConnectionManager for WebSocket channels
+│   │   ├── main.py                 # Application initialization, middleware, routes
+│   │   └── seed.py                 # Demo data seeder script
 │   ├── requirements.txt            # Python dependencies
-│   └── venv/                       # Local Python virtual environment
+│   └── transport.db                # Local SQLite database (development)
 │
-├── frontend/
-│   ├── android/                    # Capacitor Android Studio native project
-│   │   └── app/build/outputs/apk/  # Compiled Android APK (debug)
-│   ├── public/                     # Static assets, icons, notification badges
+├── frontend/                       # React 19 + TypeScript Application
+│   ├── android/                    # Capacitor Android Native Studio Project
+│   │   ├── app/
+│   │   │   ├── src/main/AndroidManifest.xml
+│   │   │   └── build/outputs/apk/debug/app-debug.apk
+│   │   └── gradlew.bat             # Gradle build executable
+│   ├── public/                     # Static icons, markers, and sounds
 │   ├── src/
 │   │   ├── components/             # Reusable UI components & layouts
+│   │   │   ├── layout/             # AdminLayout, MobileLayout, Topbar, Sidebar
+│   │   │   └── ui/                 # Buttons, modals, badges, inputs
+│   │   ├── lib/
+│   │   │   ├── api.ts              # Axios instance with JWT interceptor
+│   │   │   ├── constants.ts        # Global constants
+│   │   │   └── utils.ts            # Formatting & classmerge utilities
 │   │   ├── pages/
-│   │   │   ├── auth/LoginPage.tsx  # Multi-role login portal
-│   │   │   ├── driver/             # Driver dashboard, routes, passengers
-│   │   │   ├── parent/             # Live tracking tab, alerts, children
-│   │   │   └── ...                 # Admin dashboards, fleets, routes
-│   │   ├── stores/                 # Zustand stores (tripStore, authStore)
-│   │   ├── lib/                    # Axios API client, WebSocket manager
-│   │   └── types/                  # TypeScript interfaces
-│   ├── capacitor.config.ts         # Capacitor native bridge configuration
-│   ├── package.json                # NPM dependencies & build scripts
+│   │   │   ├── auth/               # LoginPage, ForgotPasswordPage
+│   │   │   ├── buses/              # Bus fleet management
+│   │   │   ├── dashboard/          # Administrator dashboard
+│   │   │   ├── driver/             # Driver dashboard, manifest, profile tab
+│   │   │   ├── drivers/            # Driver administration
+│   │   │   ├── parent/             # Parent live tracking, settings, contacts
+│   │   │   ├── parents/            # Parents directory with pagination & upload
+│   │   │   ├── reports/            # Operational reports
+│   │   │   ├── routes/             # Route & bus stop builder
+│   │   │   ├── settings/           # System settings
+│   │   │   ├── students/           # Student directory with pagination & upload
+│   │   │   ├── trips/              # Historical and active trip monitors
+│   │   │   └── users/              # User account administration
+│   │   ├── stores/                 # Zustand state stores (authStore, tripStore)
+│   │   ├── types/                  # TypeScript interface definitions
+│   │   ├── App.tsx                 # Universal client application router
+│   │   ├── AppAdmin.tsx            # Dedicated Admin Portal entrypoint
+│   │   └── main.tsx                # React DOM root entry
+│   ├── capacitor.config.ts         # Capacitor native container configuration
+│   ├── package.json                # Dependencies and npm scripts
 │   └── vite.config.ts              # Vite configuration
 │
 └── docker/
-    └── docker-compose.yml          # Containerized deployment
+    └── docker-compose.yml          # Multi-container orchestration
 ```
 
 ---
 
-## 👥 User Roles & Portals
+## 📱 Native Android Mobile App
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                      YellowBird Platform                        │
-├─────────────────┬─────────────────┬──────────────┬──────────────┤
-│   Super Admin   │  School Admin   │    Driver    │    Parent    │
-├─────────────────┼─────────────────┼──────────────┼──────────────┤
-│ • Platform view │ • Manage Fleet  │ • 1-Tap Trip │ • Live Bus   │
-│ • School tenant │ • Assign Routes │ • Auto-GPS   │ • Dynamic ETA│
-│ • System health │ • Manage Users  │ • Passengers │ • Stop Alert │
-│ • Global stats  │ • Stop Mapping  │ • Wake Lock  │ • Call Driver│
-└─────────────────┴─────────────────┴──────────────┴──────────────┘
-```
+The YellowBird Android mobile app is packaged via **Capacitor 8** to run natively on driver and parent smartphones.
 
-1. **Super Admin**: Manages school subscriptions, cross-school analytics, and global administrators.
-2. **School Admin**: Manages drivers, buses, student assignments, pickup stops, and live fleet monitoring.
-3. **Driver**: Minimalist mobile dashboard designed for single-tap operations while operating the vehicle safely.
-4. **Parent**: Consumer-grade tracking view with real-time map updates, notifications, and proximity alerts.
+### Built-in Native Features
+- **High-Accuracy Geolocation**: Uses `@capacitor/geolocation` for satellite-grade positioning.
+- **Foreground Transmission**: Prevents Android battery optimizations from suspending location updates when the driver switches tasks.
+- **Local & Push Notifications**: Triggers system chime alerts when buses approach student stops.
+- **Single Universal Binary**: Both Driver and Parent interfaces are packaged inside the same lightweight 8 MB APK. The app routes users to their respective interface upon authentication.
+
+### Direct APK Installation
+A pre-compiled, standalone APK is provided in the repository root:
+```
+D:\Real-Time-Bus-Tracker-main\YellowBird-final.apk
+```
+Transfer this file to any Android device (running Android 8.0+) and tap to install.
 
 ---
 
-## 📡 Real-Time WebSocket Architecture
+## 🖥️ Desktop Admin App (Electron)
 
-YellowBird uses dedicated WebSocket channels managed by `ConnectionManager`:
+For school reception desks, transport managers, and dispatch centers, YellowBird provides a dedicated Windows desktop application.
 
-1. **Driver GPS Broadcasting**:
-   - Driver connects to: `/api/v1/tracking/ws/driver/{bus_id}?token={JWT}`
-   - Sends telemetry payload every 2–3 seconds:
-     ```json
-     {
-       "latitude": 28.6139,
-       "longitude": 77.2090,
-       "speed": 34.5,
-       "heading": 182.0,
-       "accuracy": 5.2,
-       "trip_id": "b58fbdea-32b0-462f-9515-403c72644397"
-     }
-     ```
-2. **Parent Live Subscription**:
-   - Parent connects to: `/api/v1/tracking/ws/track/{bus_id}`
-   - Receives immediate broadcast on change and caches last known fix in memory.
-3. **Admin Global Fleet Channel**:
-   - Admins connect to: `/api/v1/tracking/ws/track_all`
-   - Receives aggregated updates across all active buses simultaneously.
+### Highlights
+- **Role Isolation**: Automatically isolates the session to administrator accounts, guaranteeing staff never accidentally view parent or driver screens.
+- **1-Click Desktop Setup**: Double-click `Create-Desktop-Shortcut.bat` in the repository root to automatically generate shortcuts on your Windows **Desktop** and **Start Menu**.
+- **Hardware Accelerated**: Leverages Chromium rendering for fluid real-time fleet map animations across multiple monitors.
 
 ---
 
-## 🛡️ Trip Lifecycle & Safety Architecture
+## ☁️ Cloud & Production Deployments
 
-To guarantee absolute reliability on unreliable mobile cellular connections:
+YellowBird is deployed across modern cloud services:
 
-- **Duplicate Trip Prevention**: When `/api/v1/tracking/trips/start` is called, the backend queries for any active `IN_PROGRESS` trips for that driver. If one is already running, it returns the existing trip instead of generating duplicate database entries.
-- **Client Auto-Resume**: The driver dashboard queries `GET /api/v1/tracking/trips/my-active` upon loading. If an in-progress trip is detected on the server, the app resumes GPS streaming immediately without driver intervention.
-- **Stale Trip Auto-Cleanup**: The server identifies any active trip older than 12 hours and automatically completes it.
-- **Timezone-Safe Normalization**: All database timestamp comparisons utilize UTC conversion (`_calculate_trip_age_hours`), avoiding errors across SQLite naive dates and timezone-aware objects.
-
----
-
-## 📱 Mobile App (Android)
-
-The application includes full native Android support configured via **Capacitor**:
-
-### Features
-- **Standalone Distribution**: The debug APK is fully bundled with all assets — no external Vite dev server is required.
-- **Hardware Geolocation**: Native GPS integration via `@capacitor/geolocation`.
-- **Foreground Service & Wake Lock**: Prevents Android OS from pausing location broadcasts when the driver navigates between tabs.
-
-### APK Output Path
-Once compiled, the production-ready Android APK is located at:
-```
-frontend/android/app/build/outputs/apk/debug/app-debug.apk
-```
+| Component | Host / Provider | URL / Endpoint |
+|---|---|---|
+| **Backend API & WebSockets** | **Render** | `https://yellow-bird.onrender.com` |
+| **Admin & Parent Web Portal** | **Vercel** | `https://yellow-bird-eosin.vercel.app` |
+| **Production Database** | **PostgreSQL (Cloud)** | Managed PostgreSQL via asyncpg with SSL encryption |
+| **Interactive API Documentation** | **Swagger UI** | `https://yellow-bird.onrender.com/docs` |
 
 ---
 
-## ⚡ Getting Started
+## ⚡ Getting Started & Local Setup
 
 ### Prerequisites
 - **Python**: 3.10 or higher
 - **Node.js**: 18.x or higher
-- **Java / Android Studio** (Optional, for building Android APK): JDK 17+
+- **Git**: Installed on your system
+- **Android Studio & JDK 17+** *(Optional, only required if recompiling the Android APK)*
 
 ---
 
 ### 1. Backend Setup
 
 ```bash
-# Navigate to backend directory
+# 1. Navigate to backend directory
 cd backend
 
-# Create and activate Python virtual environment
+# 2. Create Python virtual environment
 python -m venv venv
+
+# 3. Activate virtual environment
 # On Windows:
 venv\Scripts\activate
 # On Linux/macOS:
 source venv/bin/activate
 
-# Install dependencies
+# 4. Install dependencies
 pip install -r requirements.txt
 
-# Start the development server
+# 5. Launch development server
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
-> **API Documentation**: Open your browser to `http://localhost:8000/docs` for interactive Swagger documentation. Demo data automatically seeds on the first launch.
+> The API will be available at `http://localhost:8000`. Interactive OpenAPI documentation is accessible at `http://localhost:8000/docs`. Demo records automatically seed on first launch.
 
 ---
 
 ### 2. Frontend Web Setup
 
 ```bash
-# Navigate to frontend directory
+# 1. Navigate to frontend directory
 cd frontend
 
-# Install Node dependencies
+# 2. Install dependencies
 npm install
 
-# Start the Vite dev server
+# 3. Start Vite development server
 npm run dev
 ```
-> Access the web portal at `http://localhost:5173`.
+> Access the web application at `http://localhost:5173`. Access the dedicated Admin Portal at `http://localhost:5173/admin`.
 
 ---
 
-### 3. Android APK Build
+### 3. Android APK Compilation
 
-To compile a standalone Android APK:
+To recompile the Android APK after making source code edits:
 
-```bash
+```powershell
+# 1. Navigate to frontend directory
 cd frontend
 
-# Build frontend production bundle
+# 2. Build production web bundle
 npm run build
 
-# Sync assets to native Android project
-npx cap sync
+# 3. Sync assets to the native Android container
+npx cap sync android
 
-# Compile APK using Gradle (Windows PowerShell example)
+# 4. Compile debug APK via Gradle
 cd android
 $env:JAVA_HOME="C:\Program Files\Android\Android Studio\jbr"
-.\gradlew.bat clean assembleDebug
-```
+.\gradlew.bat assembleDebug
 
-Your compiled APK will be ready at:
-`frontend/android/app/build/outputs/apk/debug/app-debug.apk`
+# 5. Output file location:
+# frontend\android\app\build\outputs\apk\debug\app-debug.apk
+```
 
 ---
 
 ### 4. Docker Deployment
 
-To launch the entire platform (FastAPI backend + frontend) with a single command:
+To build and run both backend and frontend in isolated Docker containers:
 
 ```bash
+# From project root
 docker compose -f docker/docker-compose.yml up --build -d
 ```
 
@@ -360,94 +539,105 @@ docker compose -f docker/docker-compose.yml up --build -d
 
 ## 🌐 Network & Field Testing Modes
 
-Depending on how you are testing, configure `frontend/.env`:
+Configure `frontend/.env` depending on your testing environment:
 
-| Scenario | `VITE_API_URL` Configuration | How to Run |
+| Testing Scenario | `VITE_API_URL` Value | Usage Guide |
 |---|---|---|
-| **Local Web Browser Dev** | *Leave commented out* | Vite dev server proxies requests automatically to `localhost:8000`. |
-| **Local Wi-Fi Testing (APK on Phone)** | `VITE_API_URL=http://<YOUR_LOCAL_IP>:8000` | Ensure laptop and phone are on the same Wi-Fi network. Find your IP with `ipconfig` (Windows) or `ifconfig` (macOS/Linux). |
-| **Field 4G Cellular Testing** | `VITE_API_URL=https://<YOUR_TUNNEL>.loca.lt` | Expose backend via localtunnel: `npx localtunnel --port 8000`. |
+| **Local Web Browser** | *(Leave commented out)* | Vite dev server automatically proxies `/api/v1` requests to `localhost:8000`. |
+| **Local Wi-Fi Testing (APK on Phone)** | `http://<YOUR_LAPTOP_IP>:8000` | Connect your laptop and phone to the same Wi-Fi network. Find your IP with `ipconfig` (Windows) or `ifconfig` (macOS/Linux). |
+| **Field 4G Cellular Testing** | `https://<TUNNEL_SUBDOMAIN>.loca.lt` | Expose backend via tunnel: `npx localtunnel --port 8000`. |
+| **Production Cloud Mode** | `https://yellow-bird.onrender.com` | Directly connects mobile APK and web apps to the cloud backend. |
 
 ---
 
-## 🔌 API Reference
+## 🔌 Complete API Reference
 
-### Authentication
-- `POST /api/v1/auth/login` — Authenticate and receive JWT access token.
-- `GET /api/v1/auth/me` — Retrieve logged-in user profile.
-- `POST /api/v1/auth/register` — Register a new account (Admin role required).
+### Authentication (`/api/v1/auth`)
+- `POST /login` — Authenticate user credentials and receive JWT bearer token.
+- `GET /me` — Fetch currently authenticated user profile.
+- `PATCH /me` — Update user profile details.
+- `POST /register` — Register a new user (Super Admin or School Admin only).
+- `POST /forgot-password` — Request a password reset email.
+- `POST /reset-password` — Complete password reset with secure token.
 
-### GPS & Trips
-- `POST /api/v1/tracking/trips/start` — Start a new trip (sets bus/driver status to `ON_TRIP`).
-- `POST /api/v1/tracking/trips/{id}/end` — Complete trip and reset statuses.
-- `GET /api/v1/tracking/trips/my-active` — Get active trip for the logged-in driver.
-- `GET /api/v1/tracking/trips/active` — List all currently active trips.
-- `WS /api/v1/tracking/ws/driver/{bus_id}` — Driver GPS ingestion stream.
-- `WS /api/v1/tracking/ws/track/{bus_id}` — Subscriber real-time bus location channel.
+### GPS & Telemetry Engine (`/api/v1/tracking`)
+- `POST /trips/start` — Start a new trip (sets bus/driver status to `ON_TRIP`).
+- `POST /trips/{id}/end` — Complete trip and reset statuses to `IDLE`.
+- `GET /trips/my-active` — Query active trip for currently logged-in driver.
+- `GET /trips/active` — List all active fleet trips across the school.
+- `WS /ws/driver/{bus_id}` — Driver GPS telemetry ingestion stream.
+- `WS /ws/track/{bus_id}` — Parent subscriber channel for live bus updates.
+- `WS /ws/track_all` — Administrative fleet-wide live monitoring channel.
 
-### Fleet & Management
-- `GET /api/v1/parents/me/bus-info` — Full interconnection payload for parents (students, stops, bus, driver).
-- `GET/POST/PATCH/DELETE /api/v1/buses` — Bus fleet operations.
-- `GET/POST/PATCH/DELETE /api/v1/routes` — Routes and stop sequences.
-- `GET/POST/PATCH/DELETE /api/v1/students` — Student enrollment and bus assignment.
-- `GET /api/v1/notifications` — Notification inbox for logged-in user.
+### Parents Directory (`/api/v1/parents`)
+- `GET /` — List parents with pagination (`page`, `page_size`) and search.
+- `POST /` — Register a new parent.
+- `POST /upload` — Bulk upload parents via Excel spreadsheet (`.xlsx`).
+- `GET /me/bus-info` — Comprehensive payload for parents (students, assigned buses, driver, stops).
+- `GET /{id}/connections` — Inspect full relationship chain for a specific parent.
+
+### Students Directory (`/api/v1/students`)
+- `GET /` — List students with pagination, search, class filter, and bus filter.
+- `POST /` — Create student record with parent, bus, and stop assignments.
+- `POST /upload` — Bulk upload students via Excel spreadsheet (`.xlsx`).
+- `PATCH /{id}` — Update student enrollment, bus, or stop details.
+- `DELETE /{id}` — Remove student from registry.
+
+### Fleet & Operations
+- `/api/v1/buses` — Bus fleet CRUD, status queries, driver assignments.
+- `/api/v1/drivers` — Driver roster, license numbers, phone contacts.
+- `/api/v1/routes` — Route lines, waypoints, pickup stop sequencing.
+- `/api/v1/notifications` — Notification dispatch and user notification feeds.
+- `/api/v1/reports` — Fleet telemetry summaries, distance, and duration reports.
 
 ---
 
 ## 🔑 Demo Credentials
 
-The system seeds default demo accounts on first setup:
+The platform seeds pre-configured demo accounts for immediate testing:
 
-| Role | Email | Password | Assigned Details |
+| Role | Email | Password | Details |
 |---|---|---|---|
-| **Super Admin** | `superadmin@smarttransport.com` | `admin123` | Platform oversight |
-| **School Admin** | `admin@greenfield.edu.in` | `admin123` | Greenfield School Admin |
-| **School Admin** | `admin@dps.edu` | `admin123` | Delhi Public School Admin |
-| **Driver** | `bus111@gmail.com` | `driver123` | Driver for Bus 111 (BUS-001) |
-| **Driver** | `driver1@greenfield.edu.in` | `driver123` | Route 1 Driver (Tata Starbus) |
-| **Driver** | `driver2@greenfield.edu.in` | `driver123` | Route 2 Driver (Ashok Leyland) |
+| **Super Admin** | `superadmin@smarttransport.com` | `admin123` | Platform-wide oversight |
+| **School Admin** | `admin@greenfield.edu.in` | `admin123` | Greenfield Public School Administrator |
+| **School Admin** | `admin@dps.edu` | `admin123` | Delhi Public School Administrator |
+| **Driver** | `driver1@greenfield.edu.in` | `driver123` | Assigned to Bus BUS-001 (Tata Starbus) |
+| **Driver** | `driver2@greenfield.edu.in` | `driver123` | Assigned to Bus BUS-002 (Ashok Leyland) |
+| **Driver** | `bus111@gmail.com` | `driver123` | Dedicated test driver account |
+| **Parent** | `parent1@gmail.com` | `parent123` | Parent of Anita Verma (Bus BUS-001) |
+| **Parent** | `parent2@gmail.com` | `parent123` | Parent of Vikram Singh (Bus BUS-002) |
 | **Parent** | `sachin.shelke@gmail.com` | `parent123` | Parent of Raj Shelke |
-| **Parent** | `parent1@gmail.com` | `parent123` | Parent of Student (Anita Verma) |
-| **Parent** | `parent2@gmail.com` | `parent123` | Parent of Student (Vikram Singh) |
 
 ---
 
 ## 🛠️ Troubleshooting & FAQ
 
-### 1. Driver APK shows "Network Error" or cannot reach the server
-- **Wi-Fi Mode**: Verify that your laptop and mobile phone are connected to the exact same Wi-Fi network. Ensure `VITE_API_URL` in `frontend/.env` matches your laptop's current IPv4 address (run `ipconfig` on Windows or `ifconfig` on macOS/Linux).
-- **Firewall**: Ensure Windows Firewall permits incoming connections on port `8000`. Run the backend with `--host 0.0.0.0` so it listens on all interfaces.
-- **Rebuild APK**: Whenever changing `VITE_API_URL`, you must rebuild and sync:
-  ```bash
-  cd frontend
-  npm run build
-  npx cap sync
-  cd android && .\gradlew.bat clean assembleDebug
-  ```
+### 1. Driver mobile app shows "Network Error"
+- **Verify Backend URL**: Check `VITE_API_URL` in `frontend/.env`. When testing over Wi-Fi, ensure it points to your computer's local IP address (e.g. `http://192.168.1.5:8000`) rather than `localhost`.
+- **Firewall Exceptions**: Ensure your operating system's firewall permits incoming traffic on port `8000`.
+- **Backend Host Binding**: Always launch Uvicorn with `--host 0.0.0.0` so it listens on all network interfaces.
 
 ### 2. Location permissions on Android
-- Grant **Precise Location** permission when prompted on first launch.
-- If GPS fixes take time indoors, step near a window or outdoors to allow satellite acquisition.
+- Grant **"Allow all the time"** or **"While using the app"** with **Precise Location** enabled when prompted by Android.
+- If testing indoors without clear satellite line-of-sight, step near an exterior window or test outdoors for rapid satellite triangulation.
 
-### 3. Parent cannot see bus on the map
-- The bus marker only appears when the assigned driver has clicked **"Start Trip"** and is actively streaming live coordinates.
-- If the driver has not started a trip, the map displays a friendly *"Bus is currently offline / awaiting trip departure"* status badge, and the map focuses on the parent's home/current location.
-- Clicking the **Refresh** button on the parent screen instantly re-centers and animates directly to the parent's live GPS coordinates.
+### 3. Parent cannot see the bus marker on the map
+- The bus marker is designed **strictly to display when a trip is active**.
+- Have the assigned driver log into the Driver App and tap **"Start Trip"**. As soon as the first telemetry packet is broadcast, the bus marker will appear dynamically on the parent's map.
+- Tapping the **Refresh** button on the parent interface immediately re-centers the viewport on the user's location.
 
-### 4. Port 8000 or 5173 already in use
-- **Kill existing backend process on Windows**:
-  ```powershell
-  Get-Process -Id (Get-NetTCPConnection -LocalPort 8000).OwningProcess | Stop-Process -Force
-  ```
-- **Kill existing frontend dev server**:
-  ```powershell
-  Get-Process -Id (Get-NetTCPConnection -LocalPort 5173).OwningProcess | Stop-Process -Force
-  ```
+### 4. Excel bulk upload reports duplicate emails
+- YellowBird's ingestion engine automatically skips duplicate emails without failing the batch.
+- Each successfully created parent and student is committed to the database, and the dialog will display an exact breakdown of imported vs. skipped entries.
 
 ---
 
-## 📄 Contributing & License
+## 📄 License
 
-Contributions, issues, and feature requests are welcome!
+This project is licensed under the **MIT License** — see the `LICENSE` file for details.
 
-Distributed under the **MIT License**. See `LICENSE` for more information.
+---
+
+<div align="center">
+  <sub>Built with ❤️ for safer, smarter school transportation.</sub>
+</div>
