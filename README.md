@@ -658,5 +658,5 @@ This software, documentation, database architecture, and mobile applications are
 ---
 
 <div align="center">
-  <sub>Built with ❤️ for safer, smarter school transportation.</sub>
+  <sub>Built with Sanket Zinjurke ❤️ for safer, smarter school transportation.</sub>
 </div>
