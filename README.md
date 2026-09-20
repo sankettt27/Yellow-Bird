@@ -423,6 +423,29 @@ D:\Real-Time-Bus-Tracker-main\YellowBird-final.apk
 ```
 Transfer this file to any Android device (running Android 8.0+) and tap to install.
 
+#### 📲 1-Click Direct Download Links
+
+You can click any of the direct download links below on your mobile device or computer to immediately download and install the application:
+
+| Download Source | Type | Link |
+|---|---|---|
+| **Direct APK File (GitHub)** | Standalone Binary (`.apk`) | [📥 **Download YellowBird-final.apk (8.01 MB)**](https://github.com/sankettt27/Yellow-Bird/raw/main/YellowBird-final.apk) |
+| **Cloud CDN Mirror (Vercel)** | Fast HTTPS Mirror | [🌐 **Download from Cloud Mirror**](https://yellow-bird-eosin.vercel.app/YellowBird.apk) |
+| **Interactive Download Portal** | Web UI + Instructions | [📱 **Open Mobile Install Portal**](https://yellow-bird-eosin.vercel.app/download) |
+
+<div align="left" style="margin-top: 12px; margin-bottom: 16px;">
+  <a href="https://github.com/sankettt27/Yellow-Bird/raw/main/YellowBird-final.apk">
+    <img src="https://img.shields.io/badge/📲%20Download-YellowBird--final.apk%20(8.01%20MB)-success?style=for-the-badge&logo=android&logoColor=white" alt="Download YellowBird APK" />
+  </a>
+</div>
+
+> 💡 **Quick Android Installation Steps**:
+> 1. Tap the download link above on your Android phone.
+> 2. If Chrome displays *"File might be harmful"*, tap **Download anyway** (standard Android verification for direct APK downloads).
+> 3. Open the downloaded `YellowBird-final.apk` from your notification bar and tap **Install**.
+> 4. Drivers and Parents can log in immediately — the app automatically displays the appropriate interface based on your login account.
+
+
 ---
 
 ## 🖥️ Desktop Admin App (Electron)

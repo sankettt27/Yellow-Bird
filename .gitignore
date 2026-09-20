@@ -32,6 +32,7 @@ build/
 dist-electron/
 YellowBird-Admin-Portal/
 *.apk
+!YellowBird-final.apk
 !frontend/public/YellowBird.apk
 *.aab
 *.zip
