@@ -19,6 +19,7 @@ const RegisterSchoolPage  = lazy(() => import('@/pages/auth/RegisterSchoolPage')
 const SchoolSetupWizard   = lazy(() => import('@/pages/auth/SchoolSetupWizard').then(m => ({ default: m.SchoolSetupWizard })));
 const ForgotPasswordPage  = lazy(() => import('@/pages/auth/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
 const ResetPasswordPage   = lazy(() => import('@/pages/auth/ResetPasswordPage').then(m => ({ default: m.ResetPasswordPage })));
+const DownloadPage        = lazy(() => import('@/pages/DownloadPage').then(m => ({ default: m.DownloadPage })));
 const DashboardPage       = lazy(() => import('@/pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const UsersPage           = lazy(() => import('@/pages/users/UsersPage').then(m => ({ default: m.UsersPage })));
 const BusesPage           = lazy(() => import('@/pages/buses/BusesPage').then(m => ({ default: m.BusesPage })));
@@ -79,6 +80,7 @@ function App() {
             <Route path="/admin/setup" element={<SchoolSetupWizard />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/download" element={<DownloadPage />} />
 
             {/* Protected Dashboard Routes */}
             <Route element={<DashboardLayout />}>

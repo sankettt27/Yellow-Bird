@@ -5,7 +5,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  GraduationCap, Search, Plus, Pencil, Trash2, Bus, X, Users, Upload, FileSpreadsheet,
+  Search, Plus, Pencil, Trash2, Bus, X, Users, Upload, FileSpreadsheet,
   ChevronLeft, ChevronRight, RefreshCw
 } from 'lucide-react';
 import toast from 'react-hot-toast';

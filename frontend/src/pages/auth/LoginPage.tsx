@@ -6,7 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Bus, Eye, EyeOff, AlertCircle, ArrowRight, MapPin, Bell, Users, Shield } from 'lucide-react';
+import { Bus, Eye, EyeOff, AlertCircle, ArrowRight, MapPin, Bell, Users, Shield, Smartphone } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -363,6 +363,17 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
                 Register New School & Admin →
               </button>
             </p>
+          </div>
+
+          {/* Download Mobile App Link */}
+          <div className="mt-3 text-center">
+            <a
+              href="/download"
+              className="inline-flex items-center gap-1.5 text-xs font-bold bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 px-3.5 py-1.5 rounded-xl border border-amber-500/30 shadow-sm transition-all"
+            >
+              <Smartphone className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              Download Android App (.apk) →
+            </a>
           </div>
 
           {/* Quick Admin Portal Link */}
