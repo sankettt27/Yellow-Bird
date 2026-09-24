@@ -18,6 +18,7 @@
 
 ## 📖 Table of Contents
 
+- [License](#-license)
 - [Executive Overview](#-executive-overview)
 - [Key Features & Capabilities](#-key-features--capabilities)
 - [End-to-End System Architecture](#-end-to-end-system-architecture)
@@ -49,7 +50,7 @@
 - [Complete API Reference](#-complete-api-reference)
 - [Demo Credentials](#-demo-credentials)
 - [Troubleshooting & FAQ](#-troubleshooting--faq)
-- [License](#-license)
+
 
 ---
 
