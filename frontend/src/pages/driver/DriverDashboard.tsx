@@ -275,6 +275,8 @@ export function DriverDashboard() {
   } = useTripStore();
 
   const [showDeniedModal, setShowDeniedModal] = useState(false);
+  const [showStartReview, setShowStartReview] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
   const [showMap, setShowMap] = useState(true);
@@ -304,27 +306,32 @@ export function DriverDashboard() {
     }
   }, [driver, resumeTrip]);
 
-  const handleStartPress = useCallback(async (busId: string) => {
-    if (!driver) return;
+  const handleStartPress = useCallback(() => {
+    if (!driver || !driver.assigned_bus_id || isTracking) return;
+    setShowStartReview(true);
+  }, [driver, isTracking]);
 
+  const confirmStartTrip = useCallback(async () => {
+    if (!driver?.assigned_bus_id || isStarting) return;
     try {
-      // Check/request permission — native Android dialog shows once, never again
+      setIsStarting(true);
       let permStatus = await Geolocation.checkPermissions();
       if (permStatus.location !== 'granted') {
         permStatus = await Geolocation.requestPermissions();
       }
       if (permStatus.location !== 'granted') {
+        setShowStartReview(false);
         setShowDeniedModal(true);
         return;
       }
-
-      // Start the trip immediately — GPS is acquired in the background by
-      // watchPosition inside tripStore. No getCurrentPosition needed, no timeout ever.
-      await startTrip(busId, driver.id);
+      await startTrip(driver.assigned_bus_id, driver.id);
+      setShowStartReview(false);
     } catch {
-      // Error is already toasted with detail by tripStore.startTrip
+      // The trip store reports API/GPS errors to the user.
+    } finally {
+      setIsStarting(false);
     }
-  }, [driver, startTrip]);
+  }, [driver, isStarting, startTrip]);
 
   const handleEndTrip = useCallback(async () => {
     try {
@@ -373,6 +380,29 @@ export function DriverDashboard() {
       {/* GPS Denied Modal */}
       <AnimatePresence>
         {showDeniedModal && <GpsDeniedModal onClose={() => setShowDeniedModal(false)} />}
+      </AnimatePresence>
+
+      {/* Start Trip Review */}
+      <AnimatePresence>
+        {showStartReview && (
+          <div className="fixed inset-0 z-[800] flex items-end justify-center bg-[#1D2922]/55 backdrop-blur-sm">
+            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }} className="w-full max-w-lg rounded-t-[28px] bg-[#FFFDF8] p-6 shadow-2xl" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
+              <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-[#E7DFD0]" />
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#A9791C]">Pre-trip check</p>
+              <h2 className="mt-1 text-xl font-extrabold text-[#35433B]">Ready to start your trip?</h2>
+              <p className="mt-2 text-sm leading-relaxed text-[#817A6D]">Confirm that you are using your assigned bus and route. Your location will be shared with linked parents only after the backend accepts the trip start.</p>
+              <div className="mt-4 space-y-2 rounded-2xl border border-[#E7DFD0] bg-white p-4">
+                <div className="flex items-center justify-between gap-3 text-sm"><span className="text-[#9B927F]">Assigned bus</span><strong className="max-w-[60%] truncate text-right text-[#35433B]">{driver?.assigned_bus_id ? 'Assignment loaded' : 'Not assigned'}</strong></div>
+                <div className="flex items-center justify-between gap-3 text-sm"><span className="text-[#9B927F]">Driver</span><strong className="text-right text-[#35433B]">{user?.full_name || 'Driver account'}</strong></div>
+                <div className="flex items-center justify-between gap-3 text-sm"><span className="text-[#9B927F]">GPS permission</span><strong className="text-right text-[#35433B]">Checked when you confirm</strong></div>
+              </div>
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <button type="button" onClick={() => setShowStartReview(false)} disabled={isStarting} className="rounded-xl border border-[#E7DFD0] bg-white py-3.5 text-sm font-bold text-[#6E6A5F] disabled:opacity-50">Cancel</button>
+                <button type="button" onClick={confirmStartTrip} disabled={isStarting || !driver?.assigned_bus_id} className="rounded-xl bg-[#35433B] py-3.5 text-sm font-bold text-white disabled:opacity-50">{isStarting ? 'Starting…' : 'Confirm & Start'}</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
 
       {/* End Trip Confirmation Modal */}
@@ -611,7 +641,7 @@ export function DriverDashboard() {
             {!isTracking ? (
               <motion.button
                 whileTap={{ scale: 0.97 }}
-                onClick={() => handleStartPress(busAssigned)}
+                onClick={handleStartPress}
                 disabled={isResuming}
                 className={`w-full py-5 rounded-2xl bg-gradient-to-r from-brand-500 to-brand-600 text-white font-bold text-lg shadow-xl shadow-brand-500/30 flex items-center justify-center gap-3 active:scale-[0.98] transition-transform ${isResuming ? 'opacity-50' : ''}`}
               >
