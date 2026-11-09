@@ -204,7 +204,7 @@ export function ParentSettingsPage() {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-4 bg-gradient-to-br from-brand-500 to-violet-600 rounded-2xl p-5 text-white relative overflow-hidden"
+          className="mt-4 bg-gradient-to-br from-[#F7C948] to-[#F4A261] text-[#35433B] rounded-2xl p-5 text-white relative overflow-hidden"
         >
           <div className="absolute -top-8 -right-8 w-28 h-28 bg-white/10 rounded-full" />
           <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-white/5 rounded-full" />
