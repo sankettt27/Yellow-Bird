@@ -193,8 +193,7 @@ export function ParentTrackingTab() {
     busIds.forEach((busId) => {
       const socket = new WebSocketManager();
       socket.connectSubscriber(busId);
-      // @ts-ignore
-      socket.onMessageCallback = (msg: any) => {
+      socket.onMessage((msg: any) => {
         if (msg.event_type === 'TRIP_STARTED' || msg.type === 'TRIP_STARTED') {
           LocalNotifications.schedule({
             notifications: [{
