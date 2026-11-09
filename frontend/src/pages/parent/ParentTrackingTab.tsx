@@ -253,7 +253,7 @@ export function ParentTrackingTab() {
       : null;
 
   // Do not estimate arrival from straight-line distance; show ETA only when backend supplies it.
-  const serverEta = (displayBusLocation as LocationData & { eta_minutes?: number | null }).eta_minutes;
+  const serverEta = (displayBusLocation as (LocationData & { eta_minutes?: number | null }) | null)?.eta_minutes;
   const etaMinutes = showBusMarker && serverEta != null ? serverEta : null;
 
   const defaultCenter: [number, number] =
