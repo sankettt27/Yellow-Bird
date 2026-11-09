@@ -121,7 +121,7 @@ export function DriverProfileTab() {
   const handleLogoutPress = () => {
     if (isTripActive) {
       toast.error('You cannot sign out while a trip is running. Please end the trip first.', {
-        icon: '🚌',
+        icon: 'Bus',
         duration: 4000,
       });
       return;
@@ -362,7 +362,7 @@ export function DriverProfileTab() {
         <SectionTitle>Driving Preferences</SectionTitle>
         <SettingRow
           icon={voiceAnnouncements ? Volume2 : VolumeX}
-          iconColor="text-blue-500"
+          iconColor="text-[#35433B]"
           label="Voice Announcements"
           description="Speak stop names and passenger counts aloud"
           right={<Toggle on={voiceAnnouncements} onToggle={setVoiceAnnouncements} />}
