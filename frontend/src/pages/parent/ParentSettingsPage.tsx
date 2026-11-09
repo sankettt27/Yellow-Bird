@@ -317,7 +317,6 @@ export function ParentSettingsPage() {
                 <p className="text-xs font-semibold text-[#35433B]">School association</p>
                 <p className="mt-1 text-xs leading-relaxed text-[#817A6D]">Your registered school and child assignments are managed by the school administrator and cannot be changed from this profile.</p>
               </div>
-              </div>
             </div>
           )}
         </motion.div>
