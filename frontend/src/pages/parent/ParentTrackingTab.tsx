@@ -1,11 +1,11 @@
 /**
  * Parent Tracking Tab — Mobile map for parents.
- * • Asks for parent's location on first open
- * • Shows parent marker + bus marker + pickup stop on map
- * • Calculates live distance: bus → parent location
+ * • Uses the child's assigned pickup stop as the map reference
+ * • Shows a bus marker only while live GPS updates are received
+ * • Never requests or tracks the parent's location
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-leaflet';
 import L from 'leaflet';
@@ -125,27 +125,6 @@ function makeSchoolIcon() {
     iconSize: [44, 44],
     iconAnchor: [22, 22],
     popupAnchor: [0, -22],
-  });
-}
-
-// Amber pulsing marker — parent's live location IS the pickup point
-function makeParentPickupIcon() {
-  return L.divIcon({
-    html: `
-      <div style="position:relative;width:52px;height:52px;">
-        <div style="position:absolute;inset:0;background:#f59e0b33;border-radius:50%;animation:bus-ping 2s cubic-bezier(0,0,0.2,1) infinite;"></div>
-        <div style="position:absolute;inset:4px;background:linear-gradient(135deg,#f59e0b,#f97316);border-radius:50%;border:3px solid white;box-shadow:0 4px 14px #f59e0b77;display:flex;align-items:center;justify-content:center;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-        </div>
-        <div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:#f59e0b;color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,0.2);">You're Here</div>
-      </div>`,
-    className: '',
-    iconSize: [52, 70],
-    iconAnchor: [26, 26],
-    popupAnchor: [0, -30],
   });
 }
 
@@ -274,9 +253,8 @@ export function ParentTrackingTab() {
       : null;
 
   // Do not estimate arrival from straight-line distance; show ETA only when backend supplies it.
-  const etaMinutes = showBusMarker && displayBusLocation.eta_minutes != null
-    ? displayBusLocation.eta_minutes
-    : null;
+  const serverEta = (displayBusLocation as LocationData & { eta_minutes?: number | null }).eta_minutes;
+  const etaMinutes = showBusMarker && serverEta != null ? serverEta : null;
 
   const defaultCenter: [number, number] =
     child?.pickup_stop_lat != null && child?.pickup_stop_lng != null
