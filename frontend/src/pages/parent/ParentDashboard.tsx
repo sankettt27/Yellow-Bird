@@ -16,6 +16,7 @@ import { WebSocketManager } from '@/lib/socket';
 import { VideoSplashScreen } from '@/components/ui/VideoSplashScreen';
 import { NotificationPermBanner } from '@/components/ui/NotificationPermBanner';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { useSettingsStore } from '@/stores/settingsStore';
 
 interface ChildBusInfo {
   student_id: string;
@@ -53,6 +54,7 @@ export function ParentDashboard() {
   const queryClient = useQueryClient();
   const socketsRef = useRef<Record<string, WebSocketManager>>({});
   const [showSplash, setShowSplash] = useState(true);
+  const notificationPrefs = useSettingsStore((state) => state.notificationPrefs);
 
   const { data, isLoading, error, refetch, isFetching } = useQuery<ParentBusInfoResponse>({
     queryKey: ['parent-bus-info'],
@@ -136,7 +138,7 @@ export function ParentDashboard() {
       const dist = haversineKm(busLat, busLng, refLat, refLng);
       const alertKey = `${child.student_id}-${busId}`;
 
-      if (dist <= NEARBY_KM && !nearbyAlertedRef.current.has(alertKey)) {
+      if (dist <= NEARBY_KM && notificationPrefs.busApproachingPickup && !nearbyAlertedRef.current.has(alertKey)) {
         nearbyAlertedRef.current.add(alertKey);
 
         const locationLabel = child.pickup_stop_name || 'the assigned pickup stop';
@@ -178,7 +180,10 @@ export function ParentDashboard() {
           if (msg.type === 'TRIP_STARTED') {
             const message = msg.data?.message || 'Bus trip started!';
             toast.success(message, { duration: 6000 });
-            fireNativeNotification('Bus trip started', message);
+            const isReturnTrip = msg.data?.trip_type === 'return' || msg.data?.journey_type === 'return';
+            if (isReturnTrip && notificationPrefs.returnJourneyStarted) {
+              fireNativeNotification('Return journey started', message);
+            }
             queryClient.invalidateQueries({ queryKey: ['parent-bus-info'] });
             queryClient.invalidateQueries({ queryKey: ['parent-notifications'] });
             queryClient.invalidateQueries({ queryKey: ['notification-unread-count'] });
@@ -187,7 +192,7 @@ export function ParentDashboard() {
           } else if (msg.type === 'TRIP_ENDED') {
             const message = msg.data?.message || 'Bus trip completed.';
             toast.success(message, { duration: 6000 });
-            fireNativeNotification('Bus trip completed', message);
+            if (notificationPrefs.tripCompleted) fireNativeNotification('Bus trip completed', message);
             queryClient.invalidateQueries({ queryKey: ['parent-bus-info'] });
             queryClient.invalidateQueries({ queryKey: ['parent-notifications'] });
             queryClient.invalidateQueries({ queryKey: ['notification-unread-count'] });
@@ -201,7 +206,7 @@ export function ParentDashboard() {
         existingSockets[busId] = socket;
       }
     });
-  }, [children, queryClient]);
+  }, [children, queryClient, notificationPrefs]);
 
   // Handle unmount
   useEffect(() => {
