@@ -8,9 +8,14 @@ import { persist } from 'zustand/middleware';
 export type MapStyle = 'clean' | 'street' | 'satellite' | 'dark';
 
 interface NotificationPrefs {
-  tripStart: boolean;
-  busNearby: boolean;
-  busArrived: boolean;
+  busApproachingPickup: boolean;
+  busReachedPickup: boolean;
+  childPickupConfirmed: boolean;
+  busReachedSchool: boolean;
+  returnJourneyStarted: boolean;
+  childDropoffConfirmed: boolean;
+  tripCompleted: boolean;
+  busDelay: boolean;
 }
 
 interface SettingsState {
@@ -33,9 +38,14 @@ export const useSettingsStore = create<SettingsState>()(
       darkMode: false,
       mapStyle: 'clean',
       notificationPrefs: {
-        tripStart: true,
-        busNearby: true,
-        busArrived: true,
+        busApproachingPickup: true,
+        busReachedPickup: true,
+        childPickupConfirmed: true,
+        busReachedSchool: true,
+        returnJourneyStarted: true,
+        childDropoffConfirmed: true,
+        tripCompleted: true,
+        busDelay: true,
       },
       sunlightMode: false,
       voiceAnnouncements: false,
@@ -62,6 +72,17 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: 'smart-transport-settings',
+      merge: (persisted, current) => {
+        const saved = (persisted ?? {}) as Partial<SettingsState>;
+        return {
+          ...current,
+          ...saved,
+          notificationPrefs: {
+            ...current.notificationPrefs,
+            ...(saved.notificationPrefs ?? {}),
+          },
+        };
+      },
     }
   )
 );
