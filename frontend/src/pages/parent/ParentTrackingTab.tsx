@@ -226,7 +226,7 @@ export function ParentTrackingTab() {
           // Backend sends raw location data directly to bus-specific subscribers
           setLiveLocations((prev) => ({ ...prev, [busId]: msg }));
         }
-      };
+      });
       sockets.push(socket);
     });
 
