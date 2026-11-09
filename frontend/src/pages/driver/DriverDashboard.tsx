@@ -40,12 +40,11 @@ function TripTimer({ startedAt }: { startedAt: string }) {
     setElapsed(`${h}:${m}:${s}`);
   }, [start]);
 
-  // Run tick on every render via useEffect
-  useState(() => {
+  useEffect(() => {
     tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  });
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [tick]);
 
   return <span className="font-mono text-xl font-bold text-brand-500">{elapsed}</span>;
 }
