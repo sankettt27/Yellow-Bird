@@ -198,7 +198,7 @@ export function ParentTrackingTab() {
         if (msg.event_type === 'TRIP_STARTED' || msg.type === 'TRIP_STARTED') {
           LocalNotifications.schedule({
             notifications: [{
-              title: `🚌 Bus Started`,
+              title: 'Bus started',
               body: msg.payload?.message || `The bus has started its trip!`,
               id: Math.floor(Math.random() * 2000000000),
               schedule: { at: new Date(Date.now() + 100) },
@@ -208,7 +208,7 @@ export function ParentTrackingTab() {
         } else if (msg.event_type === 'TRIP_ENDED' || msg.type === 'TRIP_ENDED') {
           LocalNotifications.schedule({
             notifications: [{
-              title: `🏁 Trip Ended`,
+              title: 'Trip ended',
               body: msg.payload?.message || `The bus trip has been completed.`,
               id: Math.floor(Math.random() * 2000000000),
               schedule: { at: new Date(Date.now() + 100) },
@@ -365,31 +365,31 @@ export function ParentTrackingTab() {
             />
             <MapFlyTo target={flyTarget} />
 
-            {/* 🚏 Registered Pickup Stop (Always shown as reference) */}
+            {/* Registered pickup stop (Always shown as reference) */}
             {child?.pickup_stop_lat && child?.pickup_stop_lng && (
               <Marker position={[child.pickup_stop_lat, child.pickup_stop_lng]} icon={makeStopIcon()}>
                 <Popup>
                   <div className="text-center">
-                    <p className="font-bold text-xs">🚏 Registered Pickup Stop</p>
+                    <p className="font-bold text-xs">Registered pickup stop</p>
                     <p className="text-[11px] text-gray-500">{child.pickup_stop_name}</p>
                   </div>
                 </Popup>
               </Marker>
             )}
 
-            {/* 🏫 School Marker */}
+            {/* School marker */}
             {child?.school_lat && child?.school_lng && (
               <Marker position={[child.school_lat, child.school_lng]} icon={makeSchoolIcon()}>
                 <Popup>
                   <div className="text-center">
-                    <p className="font-bold text-xs text-[#35433B]">🏫 School Campus</p>
+                    <p className="font-bold text-xs text-[#35433B]">School campus</p>
                     <p className="text-[11px] text-gray-500 mt-0.5">Destination</p>
                   </div>
                 </Popup>
               </Marker>
             )}
 
-            {/* 🟢 Live Bus Marker (STRICT: ONLY rendered when live trip is active) */}
+            {/* Live bus marker (STRICT: ONLY rendered when live trip is active) */}
             {showBusMarker && (
               <Marker
                 position={[displayBusLocation.latitude, displayBusLocation.longitude]}
@@ -397,7 +397,7 @@ export function ParentTrackingTab() {
               >
                 <Popup>
                   <div className="text-center">
-                    <p className="font-bold text-xs">🚌 {child?.bus_number}</p>
+                    <p className="font-bold text-xs">{child?.bus_number}</p>
                     <p className="text-[11px] text-green-600 font-semibold">● LIVE</p>
                     <p className="text-[11px] text-gray-500">{Math.round(displayBusLocation.speed)} km/h</p>
                     {distanceToBus != null && (
@@ -570,8 +570,8 @@ export function ParentTrackingTab() {
                       <p className="text-xs text-[#35433B] font-bold truncate">{liveLocation.route_progress.next_stop_name}</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-xs font-bold text-blue-700">{liveLocation.route_progress.distance_to_next_km} km</p>
-                      <p className="text-[10px] text-blue-500">{liveLocation.route_progress.stops_remaining} remaining</p>
+                      <p className="text-xs font-bold text-[#35433B]">{liveLocation.route_progress.distance_to_next_km} km</p>
+                      <p className="text-[10px] text-[#817A6D]">{liveLocation.route_progress.stops_remaining} remaining</p>
                     </div>
                   </div>
                 )}
