@@ -1,14 +1,11 @@
 /**
- * MobileLayout — Mobile-first shell for Driver and Parent users.
- * Features a compact top header and iOS/Android-style bottom tab navigation.
- * Replaces the desktop Sidebar + Topbar for mobile roles.
+ * YellowBird mobile shell — shared parent/driver navigation.
+ * Authentication and role assignment remain owned by the existing backend.
  */
-
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Bus, Navigation, Users, User, GraduationCap,
-  MapPin, Bell,
+  BusFront, MapPinned, UsersRound, UserRound, Bell, House,
 } from 'lucide-react';
 import { useAuthStore } from '@/stores/authStore';
 import { ROLES } from '@/lib/constants';
@@ -21,105 +18,92 @@ interface TabItem {
 }
 
 const driverTabs: TabItem[] = [
-  { label: 'Trip', icon: Navigation, path: '/driver' },
-  { label: 'Passengers', icon: Users, path: '/driver/passengers' },
-  { label: 'Bus', icon: Bus, path: '/driver/bus' },
-  { label: 'Profile', icon: User, path: '/driver/profile' },
+  { label: 'Bus', icon: BusFront, path: '/driver' },
+  { label: 'Passengers', icon: UsersRound, path: '/driver/passengers' },
+  { label: 'Profile', icon: UserRound, path: '/driver/profile' },
 ];
 
 const parentTabs: TabItem[] = [
-  { label: 'My Children', icon: GraduationCap, path: '/parent' },
-  { label: 'Track Bus', icon: MapPin, path: '/parent/tracking' },
+  { label: 'Home', icon: House, path: '/parent' },
+  { label: 'Tracking', icon: MapPinned, path: '/parent/tracking' },
   { label: 'Alerts', icon: Bell, path: '/notifications' },
+  { label: 'Profile', icon: UserRound, path: '/parent/settings' },
 ];
 
 export function MobileLayout() {
   const { user } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
-
   const isDriver = user?.role === ROLES.DRIVER;
   const tabs = isDriver ? driverTabs : parentTabs;
-
   const settingsPath = isDriver ? '/driver/profile' : '/parent/settings';
+  const firstName = user?.full_name?.trim().split(/\s+/)[0] || 'there';
+  const initials = user?.full_name?.trim().split(/\s+/).map((part) => part[0]).join('').slice(0, 2) || 'Y';
 
   return (
-    <div className="min-h-screen bg-surface dark:bg-gray-950 flex flex-col">
-      {/* ── Mobile Header ── */}
-      <header className="sticky top-0 z-40 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-200/60 dark:border-gray-800/60">
-        <div className="flex items-center justify-between px-4 h-14">
-          {/* Brand */}
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-brand-500 to-brand-600 flex items-center justify-center shadow-lg shadow-brand-500/20">
-              <Bus className="w-4 h-4 text-white" />
+    <div className="yb-app-shell min-h-screen flex flex-col">
+      <header className="yb-topbar sticky top-0 z-40">
+        <div className="mx-auto flex h-[68px] max-w-3xl items-center justify-between px-4 sm:px-6">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="yb-brand-mark" aria-hidden="true">
+              <BusFront className="h-5 w-5" strokeWidth={2.2} />
             </div>
-            <div>
-              <h1 className="text-sm font-bold text-gray-900 dark:text-white leading-none">YellowBird</h1>
-              <p className="text-[10px] text-gray-400 font-medium leading-none mt-0.5">
-                {isDriver ? 'Driver Portal' : 'Parent Portal'}
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#88764f]">
+                YellowBird
               </p>
+              <h1 className="truncate text-[15px] font-bold leading-tight text-[#35433B]">
+                {isDriver ? 'Driver workspace' : 'Family workspace'}
+              </h1>
             </div>
           </div>
-
-          {/* User Avatar (tappable → Settings) */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate(settingsPath)}
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-gray-100/80 dark:bg-gray-800/80 hover:bg-gray-200/80 dark:hover:bg-gray-700/80 transition-colors active:scale-95"
-            >
-              <div className="w-6 h-6 rounded-full bg-brand-500 flex items-center justify-center text-white text-[10px] font-bold">
-                {user?.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2)}
-              </div>
-              <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 max-w-[80px] truncate">
-                {user?.full_name?.split(' ')[0]}
-              </span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => navigate(settingsPath)}
+            className="yb-account-button"
+            aria-label="Open profile and settings"
+          >
+            <span className="yb-avatar">{initials}</span>
+            <span className="hidden max-w-[112px] truncate text-xs font-semibold text-[#35433B] sm:block">
+              {firstName}
+            </span>
+          </button>
         </div>
       </header>
 
-      {/* ── Content Area ── */}
-      <main className="flex-1 flex flex-col overflow-y-auto pb-20 relative">
-        <Outlet />
+      <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-0 pb-28 sm:px-4">
+        <div className="w-full flex-1">
+          <Outlet />
+        </div>
       </main>
 
-      {/* ── Bottom Tab Bar ── */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl border-t border-gray-200/60 dark:border-gray-800/60"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
-      >
-        <div className="flex items-center justify-around h-16 px-2">
+      <nav className="yb-bottom-nav fixed inset-x-0 bottom-0 z-40" aria-label="Main navigation">
+        <div
+          className={cn('mx-auto grid h-[76px] max-w-3xl px-2', isDriver ? 'grid-cols-3' : 'grid-cols-4')}
+          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+        >
           {tabs.map((tab) => {
-            const isActive = tab.path === '/driver'
-              ? location.pathname === '/driver'
+            const isActive = tab.path === '/driver' || tab.path === '/parent'
+              ? location.pathname === tab.path
               : location.pathname.startsWith(tab.path);
-
             return (
               <NavLink
                 key={tab.path}
                 to={tab.path}
-                className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1 relative"
+                aria-current={isActive ? 'page' : undefined}
+                className="relative flex flex-col items-center justify-center gap-1"
               >
                 {isActive && (
-                  <motion.div
-                    layoutId="mobile-tab-indicator"
-                    className="absolute -top-0.5 w-8 h-1 rounded-full bg-brand-500"
-                    transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                  <motion.span
+                    layoutId="yb-tab-indicator"
+                    className="absolute top-0 h-[3px] w-9 rounded-full bg-[#D49B24]"
+                    transition={{ type: 'spring', stiffness: 480, damping: 34 }}
                   />
                 )}
-                <div className={cn(
-                  'w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-200',
-                  isActive
-                    ? 'bg-brand-500/10 dark:bg-brand-500/20 text-brand-600 dark:text-brand-400 scale-110'
-                    : 'text-gray-400 dark:text-gray-500'
-                )}>
-                  <tab.icon className={cn('w-5 h-5', isActive && 'stroke-[2.5px]')} />
-                </div>
-                <span className={cn(
-                  'text-[10px] font-semibold transition-colors',
-                  isActive
-                    ? 'text-brand-600 dark:text-brand-400'
-                    : 'text-gray-400 dark:text-gray-500'
-                )}>
+                <span className={cn('yb-tab-icon', isActive && 'yb-tab-icon-active')}>
+                  <tab.icon className="h-[19px] w-[19px]" strokeWidth={isActive ? 2.4 : 1.9} />
+                </span>
+                <span className={cn('text-[10px] font-semibold', isActive ? 'text-[#35433B]' : 'text-[#9B927F]')}>
                   {tab.label}
                 </span>
               </NavLink>
