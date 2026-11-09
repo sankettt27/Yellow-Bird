@@ -168,7 +168,7 @@ function DriverLiveMap({ lat, lng, accuracy }: { lat: number; lng: number; accur
 
       {/* Live Driver Badge */}
       <div className="absolute bottom-2.5 left-2.5 z-[400] px-2.5 py-1 rounded-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm text-[10px] font-bold text-gray-700 dark:text-gray-300 shadow-sm flex items-center gap-1.5">
-        <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+        <span className="w-2 h-2 rounded-full bg-[#D49B24] animate-pulse" />
         Live Vehicle Position
       </div>
     </div>
@@ -424,7 +424,7 @@ export function DriverDashboard() {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-[#F7C948] to-[#F4A261] text-[#35433B] rounded-2xl p-4 text-white relative overflow-hidden"
+          className="bg-gradient-to-br from-[#F7C948] to-[#F4A261] text-[#35433B] rounded-2xl p-4 text-[#35433B] relative overflow-hidden"
         >
           <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full" />
           <div className="relative flex items-center justify-between">
@@ -435,7 +435,7 @@ export function DriverDashboard() {
             <div className={`px-3 py-1.5 rounded-xl text-xs font-bold border ${
               isTracking
                 ? 'bg-green-400/20 border-green-400/30 text-green-200'
-                : 'bg-white/10 border-white/20 text-white/70'
+                : 'bg-white/35 border-white/50 text-[#35433B]'
             }`}>
               {isTracking ? '● ON TRIP' : '● OFF DUTY'}
             </div>
