@@ -89,9 +89,9 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 const mapStyleOptions: { value: MapStyle; label: string; desc: string }[] = [
-  { value: 'clean', label: '🗺️ Clean', desc: 'Minimal, uncluttered' },
-  { value: 'street', label: '🏙️ Street', desc: 'Google-style, detailed' },
-  { value: 'satellite', label: '🛰️ Satellite', desc: 'Aerial imagery' },
+  { value: 'clean', label: 'Clean', desc: 'Minimal, uncluttered' },
+  { value: 'street', label: 'Street', desc: 'Google-style, detailed' },
+  { value: 'satellite', label: 'Satellite', desc: 'Aerial imagery' },
 ];
 
 export function ParentSettingsPage() {
@@ -235,7 +235,7 @@ export function ParentSettingsPage() {
           {!isEditing ? (
             <>
               <SettingRow icon={User} iconColor="text-brand-500" label={user?.full_name ?? '—'} description="Full Name" />
-              <SettingRow icon={Mail} iconColor="text-blue-500" label={user?.email ?? '—'} description="Email" />
+              <SettingRow icon={Mail} iconColor="text-[#35433B]" label={user?.email ?? '—'} description="Email" />
               <SettingRow icon={Phone} iconColor="text-green-500" label={user?.phone ?? 'Not set'} description="Phone Number" />
               
               {/* Connected School Card */}
