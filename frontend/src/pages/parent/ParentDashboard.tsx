@@ -283,6 +283,7 @@ export function ParentDashboard() {
 }
 
 function ChildCard({ child, index }: { child: ChildBusInfo; index: number }) {
+  const tripActive = child.bus_status?.toLowerCase() === 'on_trip' || child.bus_status?.toLowerCase() === 'on trip';
   const busStatusColors: Record<string, string> = {
     active: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
     on_trip: 'bg-[#E9EFE6] text-[#35433B]',
@@ -364,12 +365,14 @@ function ChildCard({ child, index }: { child: ChildBusInfo; index: number }) {
           <Clock className="w-4 h-4 text-amber-500 shrink-0" />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold text-gray-800 dark:text-gray-200">
-              Trip Not Active
+              {tripActive ? 'Trip In Progress' : 'Trip Not Active'}
             </p>
             <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-              {child.last_trip_ended_at
-                ? `Previous trip ended at ${new Date(child.last_trip_ended_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}`
-                : 'Waiting for driver to begin journey'}
+              {tripActive
+                ? 'Trip status is active. Open Tracking for live GPS updates.'
+                : child.last_trip_ended_at
+                  ? `Previous trip ended at ${new Date(child.last_trip_ended_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true })}`
+                  : 'Waiting for driver to begin journey'}
             </p>
           </div>
         </div>
