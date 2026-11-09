@@ -424,13 +424,13 @@ export function DriverDashboard() {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl p-4 text-white relative overflow-hidden"
+          className="bg-gradient-to-br from-[#F7C948] to-[#F4A261] text-[#35433B] rounded-2xl p-4 text-white relative overflow-hidden"
         >
           <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full" />
           <div className="relative flex items-center justify-between">
             <div>
-              <p className="text-white/70 text-xs font-medium">Welcome back,</p>
-              <h2 className="text-lg font-bold">{user?.full_name?.split(' ')[0]}</h2>
+              <p className="text-[#35433B]/65 text-xs font-medium">Welcome back,</p>
+              <h2 className="text-lg font-bold text-[#35433B]">{user?.full_name?.split(' ')[0]}</h2>
             </div>
             <div className={`px-3 py-1.5 rounded-xl text-xs font-bold border ${
               isTracking
@@ -489,13 +489,13 @@ export function DriverDashboard() {
                 exit={{ opacity: 0, y: -8 }}
                 className={`rounded-2xl px-4 py-3.5 flex items-center gap-3 border text-sm font-medium ${
                   gpsStatus === 'active'   ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'
-                  : gpsStatus === 'acquiring' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400'
+                  : gpsStatus === 'acquiring' ? 'bg-[#F8F6F0] border-[#E7DFD0] text-[#35433B]'
                   : gpsStatus === 'error'  ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
                   : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
                 }`}
               >
                 {gpsStatus === 'active'    && <><CheckCircle2 className="w-5 h-5 shrink-0" /><span>GPS Active — Broadcasting live</span></>}
-                {gpsStatus === 'acquiring' && <><div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin shrink-0" /><span>Acquiring GPS signal…</span></>}
+                {gpsStatus === 'acquiring' && <><div className="w-5 h-5 border-2 border-[#D49B24] border-t-transparent rounded-full animate-spin shrink-0" /><span>Acquiring GPS signal…</span></>}
                 {gpsStatus === 'error'     && <><AlertTriangle className="w-5 h-5 shrink-0" /><span>{gpsError || 'GPS error'}</span></>}
                 {gpsStatus === 'idle'      && <><Satellite className="w-5 h-5 shrink-0" /><span>Tap Start Trip to begin</span></>}
                 {isTracking && (
@@ -517,7 +517,7 @@ export function DriverDashboard() {
                 >
                   <div className="grid grid-cols-3 gap-2.5">
                     {[
-                      { label: 'Speed', value: gpsData ? `${Math.round(gpsData.speed)}` : '--', unit: 'km/h', icon: Gauge, color: 'text-blue-500 bg-blue-50 dark:bg-blue-900/20', sub: null },
+                      { label: 'Speed', value: gpsData ? `${Math.round(gpsData.speed)}` : '--', unit: 'km/h', icon: Gauge, color: 'text-[#35433B] bg-[#E9EFE6]', sub: null },
                       { label: 'Pings',  value: String(pingsCount), unit: '', icon: Activity, color: 'text-green-500 bg-green-50 dark:bg-green-900/20', sub: null },
                       {
                         label: 'Accuracy',
@@ -525,7 +525,7 @@ export function DriverDashboard() {
                         unit: 'm',
                         icon: Satellite,
                         color: gpsData && gpsData.accuracy <= 15 ? 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'text-purple-500 bg-purple-50 dark:bg-purple-900/20',
-                        sub: gpsData ? (gpsData.accuracy <= 10 ? '🛰️ Pinpoint' : gpsData.accuracy <= 25 ? 'High' : 'Refining...') : null,
+                        sub: gpsData ? (gpsData.accuracy <= 10 ? 'Pinpoint' : gpsData.accuracy <= 25 ? 'High' : 'Refining...') : null,
                       },
                     ].map(({ label, value, unit, icon: Icon, color, sub }) => (
                       <div key={label} className="bg-white dark:bg-gray-900 rounded-2xl p-3 border border-gray-100 dark:border-gray-800 text-center">
