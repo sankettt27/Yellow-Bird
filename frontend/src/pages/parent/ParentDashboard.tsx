@@ -67,10 +67,6 @@ export function ParentDashboard() {
   const swRegistrationRef = useRef<ServiceWorkerRegistration | null>(null);
   // Track which students already got a "bus nearby" alert this session to avoid spamming
   const nearbyAlertedRef = useRef<Set<string>>(new Set());
-  // Parent's live GPS location
-  const [parentLocation, setParentLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const parentWatchRef = useRef<number | null>(null);
-
   // Haversine distance in km between two lat/lng points
   const haversineKm = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
     const toRad = (deg: number) => (deg * Math.PI) / 180;
@@ -83,68 +79,12 @@ export function ParentDashboard() {
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
 
-  // Auto-detect parent's location if device GPS is already enabled
+  // Register the service worker without prompting for permissions.
   useEffect(() => {
-    async function detectLocation() {
-      if (!navigator.geolocation) return;
-
-      // Check if permission is already granted (no popup needed)
-      if ('permissions' in navigator) {
-        try {
-          const status = await navigator.permissions.query({ name: 'geolocation' } as any);
-          if (status.state === 'granted') {
-            // Silently start watching — no modal, no prompt
-            parentWatchRef.current = navigator.geolocation.watchPosition(
-              (pos) => {
-                setParentLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-              },
-              () => { /* silently ignore errors */ },
-              { enableHighAccuracy: true, timeout: 20000, maximumAge: 5000 }
-            );
-          }
-        } catch {
-          // permissions API not supported
-        }
-      }
-    }
-    detectLocation();
-
-    return () => {
-      if (parentWatchRef.current !== null) {
-        navigator.geolocation.clearWatch(parentWatchRef.current);
-      }
-    };
-  }, []);
-
-  // Register Service Worker and request notification permission
-  useEffect(() => {
-    async function setupNotifications() {
-      // 1. Register the service worker
-      if ('serviceWorker' in navigator) {
-        try {
-          const registration = await navigator.serviceWorker.register('/sw.js');
-          swRegistrationRef.current = registration;
-        } catch (err) {
-          console.error('SW registration failed:', err);
-        }
-      }
-
-      // 2. Silently check / request Capacitor permissions on mount
-      try {
-        const capStatus = await LocalNotifications.checkPermissions();
-        if (capStatus.display === 'prompt' || capStatus.display === 'prompt-with-rationale') {
-          await LocalNotifications.requestPermissions();
-        }
-      } catch {
-        // Not on native device
-      }
-
-      // 3. Request notification permission in browser if default
-      if ('Notification' in window && Notification.permission === 'default') {
-        await Notification.requestPermission();
-      }
-    }
-    setupNotifications();
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker.register('/sw.js').then((registration) => {
+      swRegistrationRef.current = registration;
+    }).catch((err) => console.error('SW registration failed:', err));
   }, []);
 
   // Helper: fire a native notification via Capacitor LocalNotifications & Service Worker
@@ -182,16 +122,15 @@ export function ParentDashboard() {
     }
   };
 
-  // Check if bus GPS ping is near the parent's live location OR pickup stop
+  // Compare bus GPS only with the child's assigned pickup stop. Parent GPS is never requested.
   const checkBusNearby = (busLat: number, busLng: number, busId: string) => {
     const NEARBY_KM = 0.5; // 500 meters
 
     children.forEach((child) => {
       if (child.bus_id !== busId) return;
 
-      // Prefer parent's live GPS; fall back to pickup stop coordinates
-      const refLat = parentLocation?.lat ?? child.pickup_stop_lat;
-      const refLng = parentLocation?.lng ?? child.pickup_stop_lng;
+      const refLat = child.pickup_stop_lat;
+      const refLng = child.pickup_stop_lng;
       if (refLat == null || refLng == null) return;
 
       const dist = haversineKm(busLat, busLng, refLat, refLng);
@@ -200,13 +139,13 @@ export function ParentDashboard() {
       if (dist <= NEARBY_KM && !nearbyAlertedRef.current.has(alertKey)) {
         nearbyAlertedRef.current.add(alertKey);
 
-        const locationLabel = parentLocation ? 'you' : (child.pickup_stop_name || 'your stop');
+        const locationLabel = child.pickup_stop_name || 'the assigned pickup stop';
         const meters = Math.round(dist * 1000);
         const message = `${child.student_name}'s bus is ~${meters}m from ${locationLabel}. Get ready!`;
 
-        toast.success(message, { icon: '📍', duration: 10000 });
+        toast.success(message, { duration: 10000 });
         fireNativeNotification(
-          `📍 Bus Nearby!`,
+          'Bus approaching pickup stop',
           message,
           `bus-nearby-${child.student_id}`
         );
@@ -238,8 +177,8 @@ export function ParentDashboard() {
         socket.onMessageCallback = (msg: any) => {
           if (msg.type === 'TRIP_STARTED') {
             const message = msg.data?.message || 'Bus trip started!';
-            toast.success(message, { icon: '🚌', duration: 6000 });
-            fireNativeNotification('🚌 Bus Trip Started!', message);
+            toast.success(message, { duration: 6000 });
+            fireNativeNotification('Bus trip started', message);
             queryClient.invalidateQueries({ queryKey: ['parent-bus-info'] });
             queryClient.invalidateQueries({ queryKey: ['parent-notifications'] });
             queryClient.invalidateQueries({ queryKey: ['notification-unread-count'] });
@@ -247,8 +186,8 @@ export function ParentDashboard() {
             nearbyAlertedRef.current.clear();
           } else if (msg.type === 'TRIP_ENDED') {
             const message = msg.data?.message || 'Bus trip completed.';
-            toast.success(message, { icon: '🏁', duration: 6000 });
-            fireNativeNotification('🏁 Bus Trip Completed', message);
+            toast.success(message, { duration: 6000 });
+            fireNativeNotification('Bus trip completed', message);
             queryClient.invalidateQueries({ queryKey: ['parent-bus-info'] });
             queryClient.invalidateQueries({ queryKey: ['parent-notifications'] });
             queryClient.invalidateQueries({ queryKey: ['notification-unread-count'] });
@@ -298,16 +237,6 @@ export function ParentDashboard() {
         {/* Notification Permission Banner */}
         <NotificationPermBanner />
 
-        {/* Parent's auto-detected location */}
-        {parentLocation && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-800/40">
-            <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse flex-shrink-0" />
-            <p className="text-xs text-green-700 dark:text-green-400 font-medium">
-              📍 Your location detected: {parentLocation.lat.toFixed(4)}, {parentLocation.lng.toFixed(4)}
-            </p>
-          </div>
-        )}
-
         {/* Loading State */}
         {isLoading && (
           <div className="space-y-4">
@@ -351,7 +280,7 @@ export function ParentDashboard() {
 function ChildCard({ child, index }: { child: ChildBusInfo; index: number }) {
   const busStatusColors: Record<string, string> = {
     active: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-    on_trip: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+    on_trip: 'bg-[#E9EFE6] text-[#35433B]',
     inactive: 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400',
     maintenance: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
   };
@@ -364,7 +293,7 @@ function ChildCard({ child, index }: { child: ChildBusInfo; index: number }) {
       className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm"
     >
       {/* Student Header */}
-      <div className="bg-gradient-to-r from-brand-500/10 to-violet-500/10 dark:from-brand-500/20 dark:to-violet-500/20 px-4 py-3.5 border-b border-gray-100 dark:border-gray-700">
+      <div className="bg-gradient-to-r from-[#F7C948]/25 to-[#F4A261]/15 px-4 py-3.5 border-b border-gray-100 dark:border-gray-700">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-brand-500 flex items-center justify-center text-white font-bold text-base shadow-md flex-shrink-0">
             {child.student_name.split(' ').map(n => n[0]).join('').slice(0, 2)}
