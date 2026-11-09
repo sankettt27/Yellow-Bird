@@ -393,7 +393,7 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
           </>)}
 
           {appMode !== 'mobile' && (
-          {/* Demo Credentials */}
+          /* Demo Credentials */
           <div className="mt-6 p-4 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/60 dark:to-gray-800/30 border border-gray-200 dark:border-gray-700/50">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
