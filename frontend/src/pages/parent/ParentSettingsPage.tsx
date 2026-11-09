@@ -377,43 +377,32 @@ export function ParentSettingsPage() {
           transition={{ delay: 0.15 }}
           className="mt-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 px-4"
         >
-          <SectionTitle>Notifications</SectionTitle>
-          <SettingRow
-            icon={Bus}
-            iconColor="text-green-500"
-            label="Trip Started"
-            description="Alert when the bus starts its trip"
-            right={
-              <Toggle
-                on={notificationPrefs.tripStart}
-                onToggle={(v) => setNotificationPref('tripStart', v)}
-              />
-            }
-          />
-          <SettingRow
-            icon={MapPin}
-            iconColor="text-amber-500"
-            label="Bus Nearby"
-            description="Alert when bus is within 2 km"
-            right={
-              <Toggle
-                on={notificationPrefs.busNearby}
-                onToggle={(v) => setNotificationPref('busNearby', v)}
-              />
-            }
-          />
-          <SettingRow
-            icon={notificationPrefs.busArrived ? Bell : BellOff}
-            iconColor="text-blue-500"
-            label="Bus Arrived at School"
-            description="Alert when bus reaches school campus"
-            right={
-              <Toggle
-                on={notificationPrefs.busArrived}
-                onToggle={(v) => setNotificationPref('busArrived', v)}
-              />
-            }
-          />
+          <SectionTitle>Journey alerts</SectionTitle>
+          <p className="pb-2 text-[11px] text-[#817A6D]">These preferences are stored on this device. Server push delivery depends on the school notification service.</p>
+          {([
+            ['busApproachingPickup', 'Bus approaching pickup point', 'When the bus is nearing the assigned stop'],
+            ['busReachedPickup', 'Bus reached pickup point', 'When the bus reaches the assigned stop'],
+            ['childPickupConfirmed', 'Child pickup confirmation', 'When pickup is confirmed by the school system'],
+            ['busReachedSchool', 'Bus reached school', 'When the bus reaches the school campus'],
+            ['returnJourneyStarted', 'Return journey started', 'When the return trip begins'],
+            ['childDropoffConfirmed', 'Child drop-off confirmation', 'When drop-off is confirmed by the school system'],
+            ['tripCompleted', 'Trip completed', 'When the driver completes the journey'],
+            ['busDelay', 'Bus delay or interruption', 'When a delay or tracking interruption is reported'],
+          ] as const).map(([key, label, description]) => (
+            <SettingRow
+              key={key}
+              icon={Bus}
+              iconColor="text-[#A9791C]"
+              label={label}
+              description={description}
+              right={
+                <Toggle
+                  on={notificationPrefs[key]}
+                  onToggle={(value) => setNotificationPref(key, value)}
+                />
+              }
+            />
+          ))}
         </motion.div>
 
         {/* About */}
