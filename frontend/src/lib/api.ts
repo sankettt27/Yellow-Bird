@@ -10,8 +10,8 @@ import axios from 'axios';
  */
 
 // Use VITE_API_URL if configured, or default to production Render URL
-const rawApiUrl = import.meta.env.VITE_API_URL || 'https://yellow-bird.onrender.com';
-const BASE_URL = `${rawApiUrl.replace(/\/$/, '')}/api/v1`;
+const rawApiUrl = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://yellow-bird.onrender.com' : '');
+const BASE_URL = rawApiUrl ? `${rawApiUrl.replace(/\/$/, '')}/api/v1` : '/api/v1';
 
 const api = axios.create({
   baseURL: BASE_URL,
