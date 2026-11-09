@@ -13,7 +13,7 @@ import 'leaflet/dist/leaflet.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bus, MapPin, Navigation, Phone, Info, Clock,
-  RefreshCw, LocateFixed, ShieldCheck, ChevronDown, ChevronUp,
+  RefreshCw, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
@@ -164,75 +164,6 @@ function MapFlyTo({ target }: { target: FlyTarget | null }) {
     }
   }, [target?.ts]);
   return null;
-}
-
-// ─── Location Permission Modal ────────────────────────────────────
-function LocationPermissionModal({
-  onAllow,
-  onSkip,
-}: {
-  onAllow: () => void;
-  onSkip: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-[700] flex items-end justify-center bg-black/60 backdrop-blur-sm">
-      <motion.div
-        initial={{ opacity: 0, y: '100%' }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: '100%' }}
-        transition={{ type: 'spring', damping: 26, stiffness: 300 }}
-        className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-t-3xl overflow-hidden shadow-2xl"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
-      >
-        {/* Header */}
-        <div className="bg-gradient-to-br from-amber-400 to-orange-500 p-6 text-white text-center relative overflow-hidden">
-          <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full" />
-          <div className="relative">
-            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <LocateFixed className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-xl font-bold">Set Your Pickup Point</h2>
-            <p className="text-white/80 text-sm mt-1">
-              Your location becomes the pickup point on the map
-            </p>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="p-5 space-y-4">
-          <div className="space-y-2.5">
-            {[
-              { icon: ShieldCheck, text: 'Your location is never sent to the server — stays on your phone only', color: 'text-green-500' },
-              { icon: MapPin,      text: 'Your live position becomes the pickup point on the map', color: 'text-[#35433B]' },
-              { icon: Navigation,  text: 'See how far the bus is from where you are standing right now', color: 'text-amber-500' },
-            ].map(({ icon: Icon, text, color }, i) => (
-              <div key={i} className="flex items-start gap-3 p-3.5 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                <Icon className={`w-5 h-5 mt-0.5 shrink-0 ${color}`} />
-                <p className="text-sm text-gray-600 dark:text-gray-400">{text}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex gap-3 pt-1">
-            <button
-              onClick={onSkip}
-              className="flex-1 py-4 rounded-2xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-sm font-medium"
-            >
-              Skip
-            </button>
-            <button
-              onClick={onAllow}
-              id="parent-enable-location-btn"
-              className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-400/30 active:scale-95"
-            >
-              <LocateFixed className="w-4 h-4" />
-              Set as My Pickup Point
-            </button>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  );
 }
 
 // ─── Main Component ──────────────────────────────────────────────
