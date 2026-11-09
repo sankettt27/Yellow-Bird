@@ -186,7 +186,7 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
           className="absolute bottom-4 left-6 w-20 h-20 rounded-full bg-white/5 backdrop-blur-xl border border-white/10"
         />
 
-        <div className="relative z-10 px-6 pt-12 pb-8 text-white" style={{ paddingTop: 'max(3rem, env(safe-area-inset-top, 12px) + 2rem)' }}>
+        <div className="relative z-10 px-6 pt-12 pb-8 text-[#35433B]" style={{ paddingTop: 'max(3rem, env(safe-area-inset-top, 12px) + 2rem)' }}>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -199,7 +199,7 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
               </div>
               <div>
                 <span className="text-xl font-bold tracking-tight">YellowBird</span>
-                <p className="text-[10px] text-white/70 font-medium leading-tight">School Transport System</p>
+                <p className="text-[10px] text-[#35433B]/65 font-medium leading-tight">School Transport System</p>
               </div>
             </div>
 
