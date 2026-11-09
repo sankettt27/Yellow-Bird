@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,104 +6,153 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
-    --foreground: 222 84% 5%;
+    --background: 43 100% 96%;
+    --foreground: 145 12% 24%;
     --card: 0 0% 100%;
-    --card-foreground: 222 84% 5%;
+    --card-foreground: 145 12% 24%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 84% 5%;
-    --primary: 45 93% 47%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 45 93% 47%;
-    --radius: 0.75rem;
-    --success: 142 71% 45%;
-    --warning: 38 92% 50%;
+    --popover-foreground: 145 12% 24%;
+    --primary: 43 91% 63%;
+    --primary-foreground: 145 12% 19%;
+    --secondary: 39 38% 92%;
+    --secondary-foreground: 145 12% 24%;
+    --muted: 39 38% 92%;
+    --muted-foreground: 35 12% 47%;
+    --accent: 28 82% 95%;
+    --accent-foreground: 145 12% 24%;
+    --destructive: 0 70% 52%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 38 24% 87%;
+    --input: 38 24% 87%;
+    --ring: 43 91% 50%;
+    --radius: 1rem;
+    --success: 145 28% 36%;
+    --warning: 36 90% 54%;
   }
 
   .dark {
-    --background: 222 84% 5%;
-    --foreground: 210 40% 98%;
-    --card: 217 33% 10%;
-    --card-foreground: 210 40% 98%;
-    --popover: 217 33% 10%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 45 93% 47%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 45 93% 47%;
+    --background: 35 18% 12%;
+    --foreground: 42 35% 94%;
+    --card: 35 16% 16%;
+    --card-foreground: 42 35% 94%;
+    --popover: 35 16% 16%;
+    --popover-foreground: 42 35% 94%;
+    --primary: 43 91% 63%;
+    --primary-foreground: 145 12% 19%;
+    --secondary: 35 14% 22%;
+    --secondary-foreground: 42 35% 94%;
+    --muted: 35 14% 22%;
+    --muted-foreground: 38 12% 68%;
+    --accent: 28 25% 24%;
+    --accent-foreground: 42 35% 94%;
+    --destructive: 0 55% 38%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 35 12% 27%;
+    --input: 35 12% 27%;
+    --ring: 43 91% 63%;
   }
-}
 
-@layer base {
-  * {
-    border-color: hsl(var(--border));
-  }
+  * { border-color: hsl(var(--border)); }
+
+  html { min-height: 100%; background: #FFF9ED; }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground antialiased;
+    min-width: 320px;
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* Custom scrollbar */
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  ::-webkit-scrollbar-track {
-    @apply bg-transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply bg-gray-300 dark:bg-gray-700 rounded-full;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-400 dark:bg-gray-600;
-  }
+  button, input, select, textarea { font: inherit; }
+  button { -webkit-tap-highlight-color: transparent; }
+  ::selection { background: #F7C948; color: #35433B; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { @apply rounded-full bg-stone-300; }
 }
 
 @layer utilities {
-  .glass {
-    @apply backdrop-blur-xl bg-white/80 dark:bg-gray-900/80 border border-white/20 dark:border-gray-800/50;
-  }
-
-  .glass-card {
-    @apply bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg border border-gray-200/50 dark:border-gray-700/50 shadow-card rounded-2xl;
-  }
-
-  .gradient-primary {
-    @apply bg-gradient-to-r from-brand-500 to-brand-600;
-  }
-
-  .gradient-text {
-    @apply bg-gradient-to-r from-brand-500 to-brand-600 bg-clip-text text-transparent;
-  }
+  .glass { @apply border border-white/40 bg-white/85 backdrop-blur-xl; }
+  .glass-card { @apply rounded-2xl border border-stone-100 bg-white shadow-card; }
+  .gradient-primary { background: linear-gradient(135deg, #F7C948, #F4A261); }
+  .gradient-text { background: linear-gradient(135deg, #A9791C, #35433B); @apply bg-clip-text text-transparent; }
 }
 
-/* Mapbox override styles */
-.mapboxgl-ctrl-logo {
-  display: none !important;
+.yb-app-shell {
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(247, 201, 72, 0.16), transparent 34rem),
+    #FFF9ED;
+  color: #35433B;
 }
 
-.mapboxgl-ctrl-attrib {
-  font-size: 10px !important;
+.yb-topbar {
+  border-bottom: 1px solid rgba(125, 105, 65, 0.13);
+  background: rgba(255, 252, 244, 0.92);
+  backdrop-filter: blur(18px);
+}
+
+.yb-brand-mark {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 14px;
+  color: #35433B;
+  background: #F7C948;
+  box-shadow: 0 5px 14px rgba(190, 143, 34, 0.18);
+}
+
+.yb-account-button {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid rgba(125, 105, 65, 0.14);
+  border-radius: 999px;
+  background: #FFFFFF;
+  padding: 4px 11px 4px 4px;
+}
+
+.yb-avatar {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 999px;
+  background: #E9EFE6;
+  color: #35433B;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.yb-bottom-nav {
+  border-top: 1px solid rgba(125, 105, 65, 0.16);
+  background: rgba(255, 253, 248, 0.96);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  backdrop-filter: blur(18px);
+}
+
+.yb-tab-icon {
+  display: grid;
+  width: 38px;
+  height: 34px;
+  place-items: center;
+  border-radius: 13px;
+  color: #9B927F;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.yb-tab-icon-active {
+  background: rgba(247, 201, 72, 0.28);
+  color: #35433B;
+  transform: translateY(-1px);
+}
+
+.mapboxgl-ctrl-logo { display: none !important; }
+.mapboxgl-ctrl-attrib { font-size: 10px !important; }
+
+@media (min-width: 640px) {
+  .yb-app-shell { min-height: 100dvh; }
+  .yb-bottom-nav { padding-bottom: 0; }
 }

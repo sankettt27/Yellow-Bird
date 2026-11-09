@@ -112,7 +112,6 @@ export function DriverProfileTab() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [phone, setPhone] = useState(user?.phone || '');
-  const [schoolId, setSchoolId] = useState(user?.school_id || '');
   const [licenseNumber, setLicenseNumber] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
 
@@ -122,7 +121,7 @@ export function DriverProfileTab() {
   const handleLogoutPress = () => {
     if (isTripActive) {
       toast.error('You cannot sign out while a trip is running. Please end the trip first.', {
-        icon: '🚌',
+        icon: 'Bus',
         duration: 4000,
       });
       return;
@@ -135,7 +134,7 @@ export function DriverProfileTab() {
     logout();
   };
 
-  const { data: schools = [], isLoading: isLoadingSchools } = useQuery<PublicSchool[]>({
+  const { data: schools = [] } = useQuery<PublicSchool[]>({
     queryKey: ['public-schools'],
     queryFn: async () => {
       const res = await api.get('/schools/public');
@@ -155,14 +154,13 @@ export function DriverProfileTab() {
   useEffect(() => {
     setFullName(user?.full_name || '');
     setPhone(user?.phone || '');
-    setSchoolId(user?.school_id || '');
     if (driver) {
       setLicenseNumber(driver.license_number || '');
       setEmergencyContact(driver.emergency_contact || '');
     }
   }, [user, driver]);
 
-  const currentSchool = schools.find((s) => s.id === (isEditing ? schoolId : user?.school_id || schoolId));
+  const currentSchool = schools.find((s) => s.id === user?.school_id);
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -171,7 +169,6 @@ export function DriverProfileTab() {
       const authRes = await api.patch('/auth/me', {
         full_name: fullName,
         phone: phone || null,
-        school_id: schoolId || null,
       });
       updateUser(authRes.data);
 
@@ -247,7 +244,6 @@ export function DriverProfileTab() {
                   setIsEditing(false);
                   setFullName(user?.full_name || '');
                   setPhone(user?.phone || '');
-                  setSchoolId(user?.school_id || '');
                   setLicenseNumber(driver?.license_number || '');
                   setEmergencyContact(driver?.emergency_contact || '');
                 }}
@@ -304,56 +300,9 @@ export function DriverProfileTab() {
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center justify-between">
-                <span>Registered School</span>
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-normal">Admin Verified Only</span>
-              </label>
-              {isLoadingSchools ? (
-                <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Loading active schools...
-                </div>
-              ) : (
-                <select
-                  value={schoolId}
-                  onChange={(e) => setSchoolId(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                >
-                  <option value="">-- Select Registered School --</option>
-                  {schools.map((sch) => (
-                    <option key={sch.id} value={sch.id}>
-                      {sch.name} {sch.city ? `(${sch.city})` : ''}
-                    </option>
-                  ))}
-                </select>
-              )}
-
-              {/* Selected School Preview Card */}
-              {currentSchool && (
-                <div className="mt-3 p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40">
-                  <div className="flex items-start gap-3">
-                    {currentSchool.logo_url ? (
-                      <img
-                        src={currentSchool.logo_url}
-                        alt={currentSchool.name}
-                        className="w-12 h-12 rounded-xl object-cover bg-white border border-gray-200 dark:border-gray-700 shadow-sm flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 flex-shrink-0">
-                        <School className="w-6 h-6" />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                        {currentSchool.name}
-                      </h4>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {currentSchool.address ? `${currentSchool.address}, ` : ''}{currentSchool.city} {currentSchool.state}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+            <div className="rounded-xl border border-[#E7DFD0] bg-[#F8F6F0] p-3">
+              <p className="text-xs font-semibold text-[#35433B]">School and vehicle assignment</p>
+              <p className="mt-1 text-xs leading-relaxed text-[#817A6D]">Your school, assigned bus and route are managed by the school administrator and cannot be changed here.</p>
             </div>
 
             <div>
@@ -413,7 +362,7 @@ export function DriverProfileTab() {
         <SectionTitle>Driving Preferences</SectionTitle>
         <SettingRow
           icon={voiceAnnouncements ? Volume2 : VolumeX}
-          iconColor="text-blue-500"
+          iconColor="text-[#35433B]"
           label="Voice Announcements"
           description="Speak stop names and passenger counts aloud"
           right={<Toggle on={voiceAnnouncements} onToggle={setVoiceAnnouncements} />}

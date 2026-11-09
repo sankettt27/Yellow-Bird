@@ -89,9 +89,9 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 const mapStyleOptions: { value: MapStyle; label: string; desc: string }[] = [
-  { value: 'clean', label: '🗺️ Clean', desc: 'Minimal, uncluttered' },
-  { value: 'street', label: '🏙️ Street', desc: 'Google-style, detailed' },
-  { value: 'satellite', label: '🛰️ Satellite', desc: 'Aerial imagery' },
+  { value: 'clean', label: 'Clean', desc: 'Minimal, uncluttered' },
+  { value: 'street', label: 'Street', desc: 'Google-style, detailed' },
+  { value: 'satellite', label: 'Satellite', desc: 'Aerial imagery' },
 ];
 
 export function ParentSettingsPage() {
@@ -107,15 +107,13 @@ export function ParentSettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [fullName, setFullName] = useState(user?.full_name || '');
   const [phone, setPhone] = useState(user?.phone || '');
-  const [schoolId, setSchoolId] = useState(user?.school_id || '');
 
   useEffect(() => {
     setFullName(user?.full_name || '');
     setPhone(user?.phone || '');
-    setSchoolId(user?.school_id || '');
   }, [user]);
 
-  const { data: schools = [], isLoading: isLoadingSchools } = useQuery<PublicSchool[]>({
+  const { data: schools = [] } = useQuery<PublicSchool[]>({
     queryKey: ['public-schools'],
     queryFn: async () => {
       const res = await api.get('/schools/public');
@@ -132,7 +130,7 @@ export function ParentSettingsPage() {
   });
 
   const childCount = busInfo?.children?.length ?? 0;
-  const currentSchool = schools.find((s) => s.id === (isEditing ? schoolId : user?.school_id || schoolId));
+  const currentSchool = schools.find((s) => s.id === user?.school_id);
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -140,7 +138,6 @@ export function ParentSettingsPage() {
       const payload = {
         full_name: fullName,
         phone: phone || null,
-        school_id: schoolId || null,
       };
       const res = await api.patch('/auth/me', payload);
       updateUser(res.data);
@@ -184,7 +181,6 @@ export function ParentSettingsPage() {
                   setIsEditing(false);
                   setFullName(user?.full_name || '');
                   setPhone(user?.phone || '');
-                  setSchoolId(user?.school_id || '');
                 }}
                 className="px-2.5 py-1.5 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400"
               >
@@ -208,7 +204,7 @@ export function ParentSettingsPage() {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-4 bg-gradient-to-br from-brand-500 to-violet-600 rounded-2xl p-5 text-white relative overflow-hidden"
+          className="mt-4 bg-gradient-to-br from-[#F7C948] to-[#F4A261] text-[#35433B] rounded-2xl p-5 text-white relative overflow-hidden"
         >
           <div className="absolute -top-8 -right-8 w-28 h-28 bg-white/10 rounded-full" />
           <div className="absolute -bottom-4 -left-4 w-20 h-20 bg-white/5 rounded-full" />
@@ -239,7 +235,7 @@ export function ParentSettingsPage() {
           {!isEditing ? (
             <>
               <SettingRow icon={User} iconColor="text-brand-500" label={user?.full_name ?? '—'} description="Full Name" />
-              <SettingRow icon={Mail} iconColor="text-blue-500" label={user?.email ?? '—'} description="Email" />
+              <SettingRow icon={Mail} iconColor="text-[#35433B]" label={user?.email ?? '—'} description="Email" />
               <SettingRow icon={Phone} iconColor="text-green-500" label={user?.phone ?? 'Not set'} description="Phone Number" />
               
               {/* Connected School Card */}
@@ -317,71 +313,9 @@ export function ParentSettingsPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1 flex items-center justify-between">
-                  <span>Registered School</span>
-                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-normal">Admin Verified Only</span>
-                </label>
-                {isLoadingSchools ? (
-                  <div className="flex items-center gap-2 text-xs text-gray-400 py-2">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Loading active schools...
-                  </div>
-                ) : (
-                  <select
-                    value={schoolId}
-                    onChange={(e) => setSchoolId(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  >
-                    <option value="">-- Select Registered School --</option>
-                    {schools.map((sch) => (
-                      <option key={sch.id} value={sch.id}>
-                        {sch.name} {sch.city ? `(${sch.city})` : ''}
-                      </option>
-                    ))}
-                  </select>
-                )}
-
-                {/* Selected School Preview Card */}
-                {currentSchool && (
-                  <div className="mt-3 p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40">
-                    <div className="flex items-start gap-3">
-                      {currentSchool.logo_url ? (
-                        <img
-                          src={currentSchool.logo_url}
-                          alt={currentSchool.name}
-                          className="w-12 h-12 rounded-xl object-cover bg-white border border-gray-200 dark:border-gray-700 shadow-sm flex-shrink-0"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 flex items-center justify-center text-amber-600 dark:text-amber-400 flex-shrink-0">
-                          <School className="w-6 h-6" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                          {currentSchool.name}
-                        </h4>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                          {currentSchool.address ? `${currentSchool.address}, ` : ''}{currentSchool.city} {currentSchool.state}
-                        </p>
-                        {currentSchool.latitude != null && currentSchool.longitude != null && (
-                          <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-green-500/10 text-green-700 dark:text-green-400 text-[10px] font-mono font-bold">
-                              <MapPin className="w-3 h-3 text-green-500" />
-                              {currentSchool.latitude.toFixed(4)}° N, {currentSchool.longitude.toFixed(4)}° E
-                            </span>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-[9px] font-semibold">
-                              <Check className="w-2.5 h-2.5" /> Coordinates Auto-Detected
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <p className="text-[10px] text-gray-400 mt-1.5">
-                  Only schools registered by system administrators are available for selection. Coordinates are automatically pre-loaded.
-                </p>
+              <div className="rounded-xl border border-[#E7DFD0] bg-[#F8F6F0] p-3">
+                <p className="text-xs font-semibold text-[#35433B]">School association</p>
+                <p className="mt-1 text-xs leading-relaxed text-[#817A6D]">Your registered school and child assignments are managed by the school administrator and cannot be changed from this profile.</p>
               </div>
             </div>
           )}
@@ -443,43 +377,32 @@ export function ParentSettingsPage() {
           transition={{ delay: 0.15 }}
           className="mt-4 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 px-4"
         >
-          <SectionTitle>Notifications</SectionTitle>
-          <SettingRow
-            icon={Bus}
-            iconColor="text-green-500"
-            label="Trip Started"
-            description="Alert when the bus starts its trip"
-            right={
-              <Toggle
-                on={notificationPrefs.tripStart}
-                onToggle={(v) => setNotificationPref('tripStart', v)}
-              />
-            }
-          />
-          <SettingRow
-            icon={MapPin}
-            iconColor="text-amber-500"
-            label="Bus Nearby"
-            description="Alert when bus is within 2 km"
-            right={
-              <Toggle
-                on={notificationPrefs.busNearby}
-                onToggle={(v) => setNotificationPref('busNearby', v)}
-              />
-            }
-          />
-          <SettingRow
-            icon={notificationPrefs.busArrived ? Bell : BellOff}
-            iconColor="text-blue-500"
-            label="Bus Arrived at School"
-            description="Alert when bus reaches school campus"
-            right={
-              <Toggle
-                on={notificationPrefs.busArrived}
-                onToggle={(v) => setNotificationPref('busArrived', v)}
-              />
-            }
-          />
+          <SectionTitle>Journey alerts</SectionTitle>
+          <p className="pb-2 text-[11px] text-[#817A6D]">These preferences are stored on this device. Server push delivery depends on the school notification service.</p>
+          {([
+            ['busApproachingPickup', 'Bus approaching pickup point', 'When the bus is nearing the assigned stop'],
+            ['busReachedPickup', 'Bus reached pickup point', 'When the bus reaches the assigned stop'],
+            ['childPickupConfirmed', 'Child pickup confirmation', 'When pickup is confirmed by the school system'],
+            ['busReachedSchool', 'Bus reached school', 'When the bus reaches the school campus'],
+            ['returnJourneyStarted', 'Return journey started', 'When the return trip begins'],
+            ['childDropoffConfirmed', 'Child drop-off confirmation', 'When drop-off is confirmed by the school system'],
+            ['tripCompleted', 'Trip completed', 'When the driver completes the journey'],
+            ['busDelay', 'Bus delay or interruption', 'When a delay or tracking interruption is reported'],
+          ] as const).map(([key, label, description]) => (
+            <SettingRow
+              key={key}
+              icon={Bus}
+              iconColor="text-[#A9791C]"
+              label={label}
+              description={description}
+              right={
+                <Toggle
+                  on={notificationPrefs[key]}
+                  onToggle={(value) => setNotificationPref(key, value)}
+                />
+              }
+            />
+          ))}
         </motion.div>
 
         {/* About */}

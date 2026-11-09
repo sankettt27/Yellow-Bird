@@ -1,11 +1,11 @@
 /**
  * Parent Tracking Tab — Mobile map for parents.
- * • Asks for parent's location on first open
- * • Shows parent marker + bus marker + pickup stop on map
- * • Calculates live distance: bus → parent location
+ * • Uses the child's assigned pickup stop as the map reference
+ * • Shows a bus marker only while live GPS updates are received
+ * • Never requests or tracks the parent's location
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-leaflet';
 import L from 'leaflet';
@@ -13,14 +13,13 @@ import 'leaflet/dist/leaflet.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bus, MapPin, Navigation, Phone, Info, Clock,
-  RefreshCw, LocateFixed, ShieldCheck, ChevronDown, ChevronUp,
+  RefreshCw, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import api from '@/lib/api';
 import toast from 'react-hot-toast';
 import { WebSocketManager } from '@/lib/socket';
 import { useSettingsStore } from '@/stores/settingsStore';
 import type { LocationData } from '@/types';
-import { Geolocation } from '@capacitor/geolocation';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
 // ─── Leaflet Icon Fix ────────────────────────────────────────────
@@ -129,27 +128,6 @@ function makeSchoolIcon() {
   });
 }
 
-// Amber pulsing marker — parent's live location IS the pickup point
-function makeParentPickupIcon() {
-  return L.divIcon({
-    html: `
-      <div style="position:relative;width:52px;height:52px;">
-        <div style="position:absolute;inset:0;background:#f59e0b33;border-radius:50%;animation:bus-ping 2s cubic-bezier(0,0,0.2,1) infinite;"></div>
-        <div style="position:absolute;inset:4px;background:linear-gradient(135deg,#f59e0b,#f97316);border-radius:50%;border:3px solid white;box-shadow:0 4px 14px #f59e0b77;display:flex;align-items:center;justify-content:center;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-            <circle cx="12" cy="7" r="4"/>
-          </svg>
-        </div>
-        <div style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);background:#f59e0b;color:white;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap;box-shadow:0 2px 4px rgba(0,0,0,0.2);">You're Here</div>
-      </div>`,
-    className: '',
-    iconSize: [52, 70],
-    iconAnchor: [26, 26],
-    popupAnchor: [0, -30],
-  });
-}
-
 export interface FlyTarget {
   coords: [number, number];
   zoom?: number;
@@ -167,75 +145,6 @@ function MapFlyTo({ target }: { target: FlyTarget | null }) {
   return null;
 }
 
-// ─── Location Permission Modal ────────────────────────────────────
-function LocationPermissionModal({
-  onAllow,
-  onSkip,
-}: {
-  onAllow: () => void;
-  onSkip: () => void;
-}) {
-  return (
-    <div className="fixed inset-0 z-[700] flex items-end justify-center bg-black/60 backdrop-blur-sm">
-      <motion.div
-        initial={{ opacity: 0, y: '100%' }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: '100%' }}
-        transition={{ type: 'spring', damping: 26, stiffness: 300 }}
-        className="w-full max-w-lg bg-white dark:bg-gray-900 rounded-t-3xl overflow-hidden shadow-2xl"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom, 16px)' }}
-      >
-        {/* Header */}
-        <div className="bg-gradient-to-br from-amber-400 to-orange-500 p-6 text-white text-center relative overflow-hidden">
-          <div className="absolute -top-8 -right-8 w-32 h-32 bg-white/10 rounded-full" />
-          <div className="relative">
-            <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
-              <LocateFixed className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-xl font-bold">Set Your Pickup Point</h2>
-            <p className="text-white/80 text-sm mt-1">
-              Your location becomes the pickup point on the map
-            </p>
-          </div>
-        </div>
-
-        {/* Body */}
-        <div className="p-5 space-y-4">
-          <div className="space-y-2.5">
-            {[
-              { icon: ShieldCheck, text: 'Your location is never sent to the server — stays on your phone only', color: 'text-green-500' },
-              { icon: MapPin,      text: 'Your live position becomes the pickup point on the map', color: 'text-indigo-500' },
-              { icon: Navigation,  text: 'See how far the bus is from where you are standing right now', color: 'text-amber-500' },
-            ].map(({ icon: Icon, text, color }, i) => (
-              <div key={i} className="flex items-start gap-3 p-3.5 bg-gray-50 dark:bg-gray-800 rounded-xl">
-                <Icon className={`w-5 h-5 mt-0.5 shrink-0 ${color}`} />
-                <p className="text-sm text-gray-600 dark:text-gray-400">{text}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex gap-3 pt-1">
-            <button
-              onClick={onSkip}
-              className="flex-1 py-4 rounded-2xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-sm font-medium"
-            >
-              Skip
-            </button>
-            <button
-              onClick={onAllow}
-              id="parent-enable-location-btn"
-              className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-400/30 active:scale-95"
-            >
-              <LocateFixed className="w-4 h-4" />
-              Set as My Pickup Point
-            </button>
-          </div>
-        </div>
-      </motion.div>
-    </div>
-  );
-}
-
 // ─── Main Component ──────────────────────────────────────────────
 export function ParentTrackingTab() {
   const [liveLocations, setLiveLocations]   = useState<Record<string, LocationData>>({});
@@ -246,20 +155,6 @@ export function ParentTrackingTab() {
 
   const flyToCoords = useCallback((coords: [number, number], zoom = 16) => {
     setFlyTarget({ coords, zoom, ts: Date.now() });
-  }, []);
-
-  // Parent location state
-  const [parentLocation, setParentLocation]           = useState<{ lat: number; lng: number } | null>(null);
-  const [showLocModal, setShowLocModal]               = useState(false);
-  // Read previously saved decision from sessionStorage so modal doesn't re-appear on tab switch
-  const [parentLocStatus, setParentLocStatusRaw] = useState<'pending' | 'granted' | 'denied' | 'skipped'>(
-    () => (sessionStorage.getItem('parentLocStatus') as 'granted' | 'denied' | 'skipped' | null) ?? 'pending'
-  );
-
-  // Wrapper that always persists the status
-  const setParentLocStatus = useCallback((s: 'pending' | 'granted' | 'denied' | 'skipped') => {
-    sessionStorage.setItem('parentLocStatus', s);
-    setParentLocStatusRaw(s);
   }, []);
 
   const { data: busInfo, isLoading, refetch, isFetching } = useQuery({
@@ -274,81 +169,13 @@ export function ParentTrackingTab() {
   const children: any[] = busInfo?.children ?? [];
   const child  = children[selectedIdx];
 
-  // Refresh handler that ALWAYS centers on parent location (or fetches fresh GPS if needed)
-  const handleRefresh = useCallback(async () => {
+  // Refresh bus assignment data and keep the map centered on the registered pickup stop.
+  const handleRefresh = useCallback(() => {
     refetch();
-    if (parentLocation) {
-      flyToCoords([parentLocation.lat, parentLocation.lng], 16);
-      toast.success('Centered on your location', { id: 'parent-refreshed' });
-      return;
+    if (child?.pickup_stop_lat != null && child?.pickup_stop_lng != null) {
+      flyToCoords([child.pickup_stop_lat, child.pickup_stop_lng], 15);
     }
-    // Attempt fresh GPS fix if parent location is not yet in state
-    try {
-      const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 6000 });
-      if (pos) {
-        const coords: [number, number] = [pos.coords.latitude, pos.coords.longitude];
-        setParentLocation({ lat: coords[0], lng: coords[1] });
-        setParentLocStatus('granted');
-        flyToCoords(coords, 16);
-        toast.success('Centered on your location', { id: 'parent-refreshed' });
-        return;
-      }
-    } catch {
-      if (child?.pickup_stop_lat && child?.pickup_stop_lng) {
-        flyToCoords([child.pickup_stop_lat, child.pickup_stop_lng], 16);
-        toast.success('Centered on pickup stop', { id: 'parent-refreshed' });
-      }
-    }
-  }, [refetch, parentLocation, flyToCoords, child?.pickup_stop_lat, child?.pickup_stop_lng, setParentLocStatus]);
-
-  // Show location modal only if user has NEVER made a choice yet this session, OR automatically start if browser already has permission
-  useEffect(() => {
-    if (children.length > 0 && parentLocStatus === 'pending') {
-      Geolocation.checkPermissions().then((status) => {
-        if (status.location === 'granted') {
-          setParentLocStatus('granted');
-        } else if (status.location === 'prompt' || status.location === 'prompt-with-rationale') {
-          setShowLocModal(true);
-        } else {
-          setParentLocStatus('denied');
-        }
-      }).catch(() => {
-        setShowLocModal(true);
-      });
-    }
-
-    // If they previously granted, silently start the GPS watch natively
-    if (children.length > 0 && parentLocStatus === 'granted' && parentWatchRef.current === null) {
-      hasFlownToParent.current = false;
-      Geolocation.watchPosition(
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
-          interval: 1000,
-          minimumUpdateInterval: 1000,
-          enableLocationFallback: false,
-        } as any,
-        (pos, err) => {
-          if (err) {
-            const msg = (err.message || '').toLowerCase();
-            if (msg.includes('timeout') || msg.includes('time') || msg.includes('obtain') || msg.includes('unavailable')) return;
-            setParentLocStatus('denied');
-            return;
-          }
-          if (pos) {
-            setParentLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-            if (!hasFlownToParent.current) {
-              hasFlownToParent.current = true;
-              flyToCoords([pos.coords.latitude, pos.coords.longitude], 16);
-            }
-          }
-        }
-      ).then(id => {
-        parentWatchRef.current = id;
-      });
-    }
-  }, [children.length, parentLocStatus, setParentLocStatus, flyToCoords]);
+  }, [refetch, child?.pickup_stop_lat, child?.pickup_stop_lng, flyToCoords]);
 
   // Fly to pickup stop when child changes
   useEffect(() => {
@@ -366,12 +193,11 @@ export function ParentTrackingTab() {
     busIds.forEach((busId) => {
       const socket = new WebSocketManager();
       socket.connectSubscriber(busId);
-      // @ts-ignore
-      socket.onMessageCallback = (msg: any) => {
+      socket.onMessage((msg: any) => {
         if (msg.event_type === 'TRIP_STARTED' || msg.type === 'TRIP_STARTED') {
           LocalNotifications.schedule({
             notifications: [{
-              title: `🚌 Bus Started`,
+              title: 'Bus started',
               body: msg.payload?.message || `The bus has started its trip!`,
               id: Math.floor(Math.random() * 2000000000),
               schedule: { at: new Date(Date.now() + 100) },
@@ -381,7 +207,7 @@ export function ParentTrackingTab() {
         } else if (msg.event_type === 'TRIP_ENDED' || msg.type === 'TRIP_ENDED') {
           LocalNotifications.schedule({
             notifications: [{
-              title: `🏁 Trip Ended`,
+              title: 'Trip ended',
               body: msg.payload?.message || `The bus trip has been completed.`,
               id: Math.floor(Math.random() * 2000000000),
               schedule: { at: new Date(Date.now() + 100) },
@@ -399,79 +225,12 @@ export function ParentTrackingTab() {
           // Backend sends raw location data directly to bus-specific subscribers
           setLiveLocations((prev) => ({ ...prev, [busId]: msg }));
         }
-      };
+      });
       sockets.push(socket);
     });
 
     return () => sockets.forEach((s) => s.disconnect());
   }, [children.map((c) => c.bus_id).join(',')]);
-
-  // Continuous parent GPS watch (exact position, no cache)
-  const parentWatchRef = useRef<string | null>(null);
-  const hasFlownToParent = useRef(false); // ensures we fly exactly once on first fix
-
-  const requestParentLocation = useCallback(async () => {
-    setShowLocModal(false);
-    try {
-      let permStatus = await Geolocation.checkPermissions();
-      if (permStatus.location !== 'granted') {
-        permStatus = await Geolocation.requestPermissions();
-      }
-      if (permStatus.location !== 'granted') {
-        setParentLocStatus('denied');
-        return;
-      }
-    } catch {
-      setParentLocStatus('denied');
-      return;
-    }
-
-    // Clear any existing watch first
-    if (parentWatchRef.current !== null) {
-      await Geolocation.clearWatch({ id: parentWatchRef.current });
-      parentWatchRef.current = null;
-    }
-    
-    hasFlownToParent.current = false; // reset so next fix flies to parent
-    
-    const watchId = await Geolocation.watchPosition(
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-        interval: 1000,
-        minimumUpdateInterval: 1000,
-        enableLocationFallback: false,
-      } as any,
-      (pos, err) => {
-        if (err) {
-          const msg = (err.message || '').toLowerCase();
-          if (msg.includes('timeout') || msg.includes('time') || msg.includes('obtain') || msg.includes('unavailable')) return;
-          setParentLocStatus('denied');
-          return;
-        }
-        if (pos) {
-          setParentLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-          setParentLocStatus('granted');
-          // Always fly to parent on FIRST fix after granting
-          if (!hasFlownToParent.current) {
-            hasFlownToParent.current = true;
-            flyToCoords([pos.coords.latitude, pos.coords.longitude], 16);
-          }
-        }
-      }
-    );
-    parentWatchRef.current = watchId;
-  }, [flyToCoords]);
-
-  // Clean up GPS watch when leaving the page
-  useEffect(() => {
-    return () => {
-      if (parentWatchRef.current !== null) {
-        Geolocation.clearWatch({ id: parentWatchRef.current });
-      }
-    };
-  }, []);
 
   // ── Derived values ───────────────────────────────────────────
   const liveLocation = child?.bus_id ? liveLocations[child.bus_id] : null;
@@ -486,23 +245,22 @@ export function ParentTrackingTab() {
   // Bus marker is ONLY visible when live data is streaming
   const showBusMarker = isLive && !!displayBusLocation;
 
-  // Distance: bus → parent (if both known)
+  // The parent map is anchored to the assigned pickup stop, never the parent's GPS.
   const distanceToBus =
-    showBusMarker && parentLocation
-      ? haversineMetres(parentLocation.lat, parentLocation.lng, displayBusLocation.latitude, displayBusLocation.longitude)
+    showBusMarker && child?.pickup_stop_lat != null && child?.pickup_stop_lng != null
+      ? haversineMetres(child.pickup_stop_lat, child.pickup_stop_lng, displayBusLocation.latitude, displayBusLocation.longitude)
       : null;
 
-  // ETA: bus → parent (if distance and bus location known)
-  // Assume a minimum speed of 20 km/h for ETA if bus is stuck in traffic or starting up
-  const etaMinutes = (distanceToBus != null && showBusMarker)
-    ? Math.max(1, Math.round(((distanceToBus / 1000) / Math.max(displayBusLocation.speed || 0, 20)) * 60))
-    : null;
+  // Do not estimate arrival from straight-line distance; show ETA only when backend supplies it.
+  const serverEta = (displayBusLocation as (LocationData & { eta_minutes?: number | null }) | null)?.eta_minutes;
+  const etaMinutes = showBusMarker && serverEta != null ? serverEta : null;
 
   const defaultCenter: [number, number] =
-    parentLocation        ? [parentLocation.lat, parentLocation.lng]
-    : showBusMarker  ? [displayBusLocation.latitude, displayBusLocation.longitude]
-    : child?.pickup_stop_lat ? [child.pickup_stop_lat, child.pickup_stop_lng]
-    : [20.5937, 78.9629];
+    child?.pickup_stop_lat != null && child?.pickup_stop_lng != null
+      ? [child.pickup_stop_lat, child.pickup_stop_lng]
+      : showBusMarker
+        ? [displayBusLocation.latitude, displayBusLocation.longitude]
+        : [20.5937, 78.9629];
 
   // ── No children ──────────────────────────────────────────────
   if (!isLoading && children.length === 0) {
@@ -520,16 +278,6 @@ export function ParentTrackingTab() {
 
   return (
     <>
-      {/* Location Permission Modal */}
-      <AnimatePresence>
-        {showLocModal && (
-          <LocationPermissionModal
-            onAllow={requestParentLocation}
-            onSkip={() => { setShowLocModal(false); setParentLocStatus('skipped'); }}
-          />
-        )}
-      </AnimatePresence>
-
       <div style={{ height: 'calc(100dvh - 130px)' }} className="relative w-full flex flex-col">
 
         {/* Loading */}
@@ -569,23 +317,6 @@ export function ParentTrackingTab() {
             title="Refresh & redirect to my location"
           >
             <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin text-brand-500' : ''}`} />
-          </button>
-          {/* Re-locate parent */}
-          <button
-            onClick={() => {
-              if (parentLocation) {
-                flyToCoords([parentLocation.lat, parentLocation.lng], 16);
-                toast.success('Centered on your location', { id: 'parent-located' });
-              } else {
-                requestParentLocation();
-              }
-            }}
-            className={`w-10 h-10 rounded-full shadow-md flex items-center justify-center transition-colors active:scale-95 ${
-              parentLocStatus === 'granted' ? 'bg-amber-400 text-white' : 'bg-white text-gray-600'
-            }`}
-            title="My location"
-          >
-            <LocateFixed className="w-4 h-4" />
           </button>
         </div>
 
@@ -633,59 +364,31 @@ export function ParentTrackingTab() {
             />
             <MapFlyTo target={flyTarget} />
 
-            {/* 🟡 Parent's live location = Pickup Point (ALWAYS shown when parent location is known) */}
-            {parentLocation && (
-              <>
-                <Marker
-                  position={[parentLocation.lat, parentLocation.lng]}
-                  icon={makeParentPickupIcon()}
-                >
-                  <Popup>
-                    <div className="text-center">
-                      <p className="font-bold text-xs">📍 You (Pickup Point)</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5">Your live location</p>
-                      {isLive && distanceToBus != null && (
-                        <p className="text-[11px] text-amber-600 font-bold mt-1">🚌 Bus is {formatDistance(distanceToBus)}</p>
-                      )}
-                    </div>
-                  </Popup>
-                </Marker>
-                <Circle
-                  center={[parentLocation.lat, parentLocation.lng]}
-                  radius={40}
-                  pathOptions={{ color: '#f59e0b', fillColor: '#f59e0b', fillOpacity: 0.12, weight: 1.5, dashArray: '4 4' }}
-                />
-              </>
-            )}
-
-            {/* 🚏 Registered Pickup Stop (Always shown as reference) */}
+            {/* Registered pickup stop (Always shown as reference) */}
             {child?.pickup_stop_lat && child?.pickup_stop_lng && (
               <Marker position={[child.pickup_stop_lat, child.pickup_stop_lng]} icon={makeStopIcon()}>
                 <Popup>
                   <div className="text-center">
-                    <p className="font-bold text-xs">🚏 Registered Pickup Stop</p>
+                    <p className="font-bold text-xs">Registered pickup stop</p>
                     <p className="text-[11px] text-gray-500">{child.pickup_stop_name}</p>
-                    {!parentLocation && (
-                      <p className="text-[10px] text-amber-600 mt-1">Enable location to set your live position</p>
-                    )}
                   </div>
                 </Popup>
               </Marker>
             )}
 
-            {/* 🏫 School Marker */}
+            {/* School marker */}
             {child?.school_lat && child?.school_lng && (
               <Marker position={[child.school_lat, child.school_lng]} icon={makeSchoolIcon()}>
                 <Popup>
                   <div className="text-center">
-                    <p className="font-bold text-xs text-blue-700">🏫 School Campus</p>
+                    <p className="font-bold text-xs text-[#35433B]">School campus</p>
                     <p className="text-[11px] text-gray-500 mt-0.5">Destination</p>
                   </div>
                 </Popup>
               </Marker>
             )}
 
-            {/* 🟢 Live Bus Marker (STRICT: ONLY rendered when live trip is active) */}
+            {/* Live bus marker (STRICT: ONLY rendered when live trip is active) */}
             {showBusMarker && (
               <Marker
                 position={[displayBusLocation.latitude, displayBusLocation.longitude]}
@@ -693,12 +396,12 @@ export function ParentTrackingTab() {
               >
                 <Popup>
                   <div className="text-center">
-                    <p className="font-bold text-xs">🚌 {child?.bus_number}</p>
+                    <p className="font-bold text-xs">{child?.bus_number}</p>
                     <p className="text-[11px] text-green-600 font-semibold">● LIVE</p>
                     <p className="text-[11px] text-gray-500">{Math.round(displayBusLocation.speed)} km/h</p>
                     {distanceToBus != null && (
                       <div className="mt-1.5 pt-1.5 border-t border-gray-100 dark:border-gray-700">
-                        <p className="text-[11px] text-amber-600 font-bold">{formatDistance(distanceToBus)} from you</p>
+                        <p className="text-[11px] text-amber-600 font-bold">{formatDistance(distanceToBus)} from assigned stop</p>
                         {etaMinutes !== null && (
                           <p className="text-[10px] text-gray-500 font-medium mt-0.5">
                             Arriving in ~{etaMinutes} min{etaMinutes !== 1 ? 's' : ''}
@@ -781,7 +484,7 @@ export function ParentTrackingTab() {
                     <div className="bg-amber-50 rounded-2xl p-3 border border-amber-100 flex flex-col justify-center">
                       <div className="flex items-center justify-between mb-0.5">
                         <p className="text-[10px] text-amber-600 font-semibold uppercase flex items-center gap-1">
-                          <LocateFixed className="w-3 h-3" /> Bus from You
+                          <LocateFixed className="w-3 h-3" /> Bus from Stop
                         </p>
                         {etaMinutes !== null && isLive && (
                           <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
@@ -820,7 +523,7 @@ export function ParentTrackingTab() {
 
                 {/* Offline Context Card */}
                 {!isLive && (
-                  <div className="bg-slate-50 rounded-2xl p-3 mb-3 border border-slate-200/80 flex items-start gap-3">
+                  <div className="bg-[#F8F6F0] rounded-2xl p-3 mb-3 border border-[#E7DFD0] flex items-start gap-3">
                     <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 mt-0.5 text-amber-600">
                       <Clock className="w-4 h-4" />
                     </div>
@@ -844,41 +547,30 @@ export function ParentTrackingTab() {
                   </div>
                 )}
 
-                {/* Pickup point info row */}
-                {parentLocation ? (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 rounded-xl mb-3 border border-amber-100">
-                    <LocateFixed className="w-4 h-4 text-amber-500 shrink-0" />
-                    <p className="text-xs text-amber-700">
-                      <strong>Your live location</strong> is the pickup point on the map
-                    </p>
-                  </div>
-                ) : child.pickup_stop_name ? (
-                  <button
-                    onClick={() => setShowLocModal(true)}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 bg-indigo-50 rounded-xl mb-3 border border-indigo-100 text-left"
-                  >
-                    <MapPin className="w-4 h-4 text-indigo-500 shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-[10px] text-indigo-400 font-semibold">REGISTERED STOP</p>
-                      <p className="text-xs text-indigo-700 font-medium truncate">{child.pickup_stop_name}</p>
+                {/* Registered pickup point */}
+                {child.pickup_stop_name && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-[#F8F6F0] rounded-xl mb-3 border border-[#E7DFD0]">
+                    <MapPin className="w-4 h-4 text-[#A9791C] shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-[#9B865D] font-semibold">ASSIGNED PICKUP STOP</p>
+                      <p className="text-xs text-[#35433B] font-semibold truncate">{child.pickup_stop_name}</p>
                     </div>
-                    <span className="text-[10px] text-amber-600 font-bold whitespace-nowrap">Use My Location →</span>
-                  </button>
-                ) : null}
+                  </div>
+                )}
 
                 {/* Live Route Progress */}
                 {liveLocation?.route_progress && (
-                  <div className="flex items-center gap-3 px-3 py-2.5 bg-blue-50 rounded-xl mb-3 border border-blue-100">
-                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
-                      <MapPin className="w-4 h-4 text-blue-600" />
+                  <div className="flex items-center gap-3 px-3 py-2.5 bg-[#F8F6F0] rounded-xl mb-3 border border-[#E7DFD0]">
+                    <div className="w-8 h-8 bg-[#E9EFE6] rounded-lg flex items-center justify-center shrink-0">
+                      <MapPin className="w-4 h-4 text-[#35433B]" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[10px] text-blue-500 font-bold uppercase tracking-wider">Next Stop</p>
-                      <p className="text-xs text-blue-900 font-bold truncate">{liveLocation.route_progress.next_stop_name}</p>
+                      <p className="text-[10px] text-[#817A6D] font-bold uppercase tracking-wider">Next Stop</p>
+                      <p className="text-xs text-[#35433B] font-bold truncate">{liveLocation.route_progress.next_stop_name}</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-xs font-bold text-blue-700">{liveLocation.route_progress.distance_to_next_km} km</p>
-                      <p className="text-[10px] text-blue-500">{liveLocation.route_progress.stops_remaining} remaining</p>
+                      <p className="text-xs font-bold text-[#35433B]">{liveLocation.route_progress.distance_to_next_km} km</p>
+                      <p className="text-[10px] text-[#817A6D]">{liveLocation.route_progress.stops_remaining} remaining</p>
                     </div>
                   </div>
                 )}
@@ -887,7 +579,7 @@ export function ParentTrackingTab() {
                 {child.driver_phone ? (
                   <a
                     href={`tel:${child.driver_phone}`}
-                    className="w-full py-3.5 rounded-2xl bg-gray-900 text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                    className="w-full py-3.5 rounded-2xl bg-[#35433B] text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform"
                   >
                     <Phone className="w-4 h-4" />
                     Call Driver — {child.driver_name?.split(' ')[0]}
@@ -909,15 +601,9 @@ export function ParentTrackingTab() {
           <div className="flex items-center gap-2 text-[10px] font-medium text-gray-600">
             <div className="w-3 h-3 rounded-full bg-green-500 shrink-0" /> Live Bus
           </div>
-          {parentLocStatus === 'granted' ? (
-            <div className="flex items-center gap-2 text-[10px] font-medium text-gray-600">
-              <div className="w-3 h-3 rounded-full bg-amber-400 shrink-0" /> You (Pickup Point)
-            </div>
-          ) : (
-            <div className="flex items-center gap-2 text-[10px] font-medium text-gray-600">
-              <div className="w-3 h-3 rounded-full bg-indigo-500 shrink-0" /> Registered Stop
-            </div>
-          )}
+          <div className="flex items-center gap-2 text-[10px] font-medium text-gray-600">
+            <div className="w-3 h-3 rounded-full bg-[#35433B] shrink-0" /> Assigned Pickup Stop
+          </div>
         </div>
 
         <style>{`

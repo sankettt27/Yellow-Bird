@@ -40,12 +40,11 @@ function TripTimer({ startedAt }: { startedAt: string }) {
     setElapsed(`${h}:${m}:${s}`);
   }, [start]);
 
-  // Run tick on every render via useEffect
-  useState(() => {
+  useEffect(() => {
     tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  });
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [tick]);
 
   return <span className="font-mono text-xl font-bold text-brand-500">{elapsed}</span>;
 }
@@ -168,7 +167,7 @@ function DriverLiveMap({ lat, lng, accuracy }: { lat: number; lng: number; accur
 
       {/* Live Driver Badge */}
       <div className="absolute bottom-2.5 left-2.5 z-[400] px-2.5 py-1 rounded-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm text-[10px] font-bold text-gray-700 dark:text-gray-300 shadow-sm flex items-center gap-1.5">
-        <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+        <span className="w-2 h-2 rounded-full bg-[#D49B24] animate-pulse" />
         Live Vehicle Position
       </div>
     </div>
@@ -275,6 +274,8 @@ export function DriverDashboard() {
   } = useTripStore();
 
   const [showDeniedModal, setShowDeniedModal] = useState(false);
+  const [showStartReview, setShowStartReview] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
   const [showEndConfirm, setShowEndConfirm] = useState(false);
   const [isEnding, setIsEnding] = useState(false);
   const [showMap, setShowMap] = useState(true);
@@ -304,27 +305,32 @@ export function DriverDashboard() {
     }
   }, [driver, resumeTrip]);
 
-  const handleStartPress = useCallback(async (busId: string) => {
-    if (!driver) return;
+  const handleStartPress = useCallback(() => {
+    if (!driver || !driver.assigned_bus_id || isTracking) return;
+    setShowStartReview(true);
+  }, [driver, isTracking]);
 
+  const confirmStartTrip = useCallback(async () => {
+    if (!driver?.assigned_bus_id || isStarting) return;
     try {
-      // Check/request permission — native Android dialog shows once, never again
+      setIsStarting(true);
       let permStatus = await Geolocation.checkPermissions();
       if (permStatus.location !== 'granted') {
         permStatus = await Geolocation.requestPermissions();
       }
       if (permStatus.location !== 'granted') {
+        setShowStartReview(false);
         setShowDeniedModal(true);
         return;
       }
-
-      // Start the trip immediately — GPS is acquired in the background by
-      // watchPosition inside tripStore. No getCurrentPosition needed, no timeout ever.
-      await startTrip(busId, driver.id);
+      await startTrip(driver.assigned_bus_id, driver.id);
+      setShowStartReview(false);
     } catch {
-      // Error is already toasted with detail by tripStore.startTrip
+      // The trip store reports API/GPS errors to the user.
+    } finally {
+      setIsStarting(false);
     }
-  }, [driver, startTrip]);
+  }, [driver, isStarting, startTrip]);
 
   const handleEndTrip = useCallback(async () => {
     try {
@@ -375,6 +381,29 @@ export function DriverDashboard() {
         {showDeniedModal && <GpsDeniedModal onClose={() => setShowDeniedModal(false)} />}
       </AnimatePresence>
 
+      {/* Start Trip Review */}
+      <AnimatePresence>
+        {showStartReview && (
+          <div className="fixed inset-0 z-[800] flex items-end justify-center bg-[#1D2922]/55 backdrop-blur-sm">
+            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }} className="w-full max-w-lg rounded-t-[28px] bg-[#FFFDF8] p-6 shadow-2xl" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
+              <div className="mx-auto mb-4 h-1.5 w-10 rounded-full bg-[#E7DFD0]" />
+              <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#A9791C]">Pre-trip check</p>
+              <h2 className="mt-1 text-xl font-extrabold text-[#35433B]">Ready to start your trip?</h2>
+              <p className="mt-2 text-sm leading-relaxed text-[#817A6D]">Confirm that you are using your assigned bus and route. Your location will be shared with linked parents only after the backend accepts the trip start.</p>
+              <div className="mt-4 space-y-2 rounded-2xl border border-[#E7DFD0] bg-white p-4">
+                <div className="flex items-center justify-between gap-3 text-sm"><span className="text-[#9B927F]">Assigned bus</span><strong className="max-w-[60%] truncate text-right text-[#35433B]">{driver?.assigned_bus_id ? 'Assignment loaded' : 'Not assigned'}</strong></div>
+                <div className="flex items-center justify-between gap-3 text-sm"><span className="text-[#9B927F]">Driver</span><strong className="text-right text-[#35433B]">{user?.full_name || 'Driver account'}</strong></div>
+                <div className="flex items-center justify-between gap-3 text-sm"><span className="text-[#9B927F]">GPS permission</span><strong className="text-right text-[#35433B]">Checked when you confirm</strong></div>
+              </div>
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <button type="button" onClick={() => setShowStartReview(false)} disabled={isStarting} className="rounded-xl border border-[#E7DFD0] bg-white py-3.5 text-sm font-bold text-[#6E6A5F] disabled:opacity-50">Cancel</button>
+                <button type="button" onClick={confirmStartTrip} disabled={isStarting || !driver?.assigned_bus_id} className="rounded-xl bg-[#35433B] py-3.5 text-sm font-bold text-white disabled:opacity-50">{isStarting ? 'Starting…' : 'Confirm & Start'}</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* End Trip Confirmation Modal */}
       <AnimatePresence>
         {showEndConfirm && (
@@ -394,18 +423,18 @@ export function DriverDashboard() {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl p-4 text-white relative overflow-hidden"
+          className="bg-gradient-to-br from-[#F7C948] to-[#F4A261] text-[#35433B] rounded-2xl p-4 text-[#35433B] relative overflow-hidden"
         >
           <div className="absolute -top-6 -right-6 w-24 h-24 bg-white/10 rounded-full" />
           <div className="relative flex items-center justify-between">
             <div>
-              <p className="text-white/70 text-xs font-medium">Welcome back,</p>
-              <h2 className="text-lg font-bold">{user?.full_name?.split(' ')[0]}</h2>
+              <p className="text-[#35433B]/65 text-xs font-medium">Welcome back,</p>
+              <h2 className="text-lg font-bold text-[#35433B]">{user?.full_name?.split(' ')[0]}</h2>
             </div>
             <div className={`px-3 py-1.5 rounded-xl text-xs font-bold border ${
               isTracking
                 ? 'bg-green-400/20 border-green-400/30 text-green-200'
-                : 'bg-white/10 border-white/20 text-white/70'
+                : 'bg-white/35 border-white/50 text-[#35433B]'
             }`}>
               {isTracking ? '● ON TRIP' : '● OFF DUTY'}
             </div>
@@ -459,13 +488,13 @@ export function DriverDashboard() {
                 exit={{ opacity: 0, y: -8 }}
                 className={`rounded-2xl px-4 py-3.5 flex items-center gap-3 border text-sm font-medium ${
                   gpsStatus === 'active'   ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-700 dark:text-green-400'
-                  : gpsStatus === 'acquiring' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-400'
+                  : gpsStatus === 'acquiring' ? 'bg-[#F8F6F0] border-[#E7DFD0] text-[#35433B]'
                   : gpsStatus === 'error'  ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400'
                   : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400'
                 }`}
               >
                 {gpsStatus === 'active'    && <><CheckCircle2 className="w-5 h-5 shrink-0" /><span>GPS Active — Broadcasting live</span></>}
-                {gpsStatus === 'acquiring' && <><div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin shrink-0" /><span>Acquiring GPS signal…</span></>}
+                {gpsStatus === 'acquiring' && <><div className="w-5 h-5 border-2 border-[#D49B24] border-t-transparent rounded-full animate-spin shrink-0" /><span>Acquiring GPS signal…</span></>}
                 {gpsStatus === 'error'     && <><AlertTriangle className="w-5 h-5 shrink-0" /><span>{gpsError || 'GPS error'}</span></>}
                 {gpsStatus === 'idle'      && <><Satellite className="w-5 h-5 shrink-0" /><span>Tap Start Trip to begin</span></>}
                 {isTracking && (
@@ -487,7 +516,7 @@ export function DriverDashboard() {
                 >
                   <div className="grid grid-cols-3 gap-2.5">
                     {[
-                      { label: 'Speed', value: gpsData ? `${Math.round(gpsData.speed)}` : '--', unit: 'km/h', icon: Gauge, color: 'text-blue-500 bg-blue-50 dark:bg-blue-900/20', sub: null },
+                      { label: 'Speed', value: gpsData ? `${Math.round(gpsData.speed)}` : '--', unit: 'km/h', icon: Gauge, color: 'text-[#35433B] bg-[#E9EFE6]', sub: null },
                       { label: 'Pings',  value: String(pingsCount), unit: '', icon: Activity, color: 'text-green-500 bg-green-50 dark:bg-green-900/20', sub: null },
                       {
                         label: 'Accuracy',
@@ -495,7 +524,7 @@ export function DriverDashboard() {
                         unit: 'm',
                         icon: Satellite,
                         color: gpsData && gpsData.accuracy <= 15 ? 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/20' : 'text-purple-500 bg-purple-50 dark:bg-purple-900/20',
-                        sub: gpsData ? (gpsData.accuracy <= 10 ? '🛰️ Pinpoint' : gpsData.accuracy <= 25 ? 'High' : 'Refining...') : null,
+                        sub: gpsData ? (gpsData.accuracy <= 10 ? 'Pinpoint' : gpsData.accuracy <= 25 ? 'High' : 'Refining...') : null,
                       },
                     ].map(({ label, value, unit, icon: Icon, color, sub }) => (
                       <div key={label} className="bg-white dark:bg-gray-900 rounded-2xl p-3 border border-gray-100 dark:border-gray-800 text-center">
@@ -611,7 +640,7 @@ export function DriverDashboard() {
             {!isTracking ? (
               <motion.button
                 whileTap={{ scale: 0.97 }}
-                onClick={() => handleStartPress(busAssigned)}
+                onClick={handleStartPress}
                 disabled={isResuming}
                 className={`w-full py-5 rounded-2xl bg-gradient-to-r from-brand-500 to-brand-600 text-white font-bold text-lg shadow-xl shadow-brand-500/30 flex items-center justify-center gap-3 active:scale-[0.98] transition-transform ${isResuming ? 'opacity-50' : ''}`}
               >

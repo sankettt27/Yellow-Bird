@@ -88,10 +88,10 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
   ];
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row overflow-auto" style={{ minHeight: '100dvh' }}>
+    <div className="yb-login min-h-screen flex flex-col lg:flex-row overflow-auto" style={{ minHeight: '100dvh' }}>
       {/* ====================== LEFT PANEL — Desktop Branding ====================== */}
       <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-500 via-brand-500 to-amber-700" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#F7C948] via-[#E8B638] to-[#F4A261]" />
 
         {/* Grid pattern overlay */}
         <div
@@ -119,7 +119,7 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
           className="absolute top-1/2 right-16 w-24 h-24 rounded-2xl bg-white/8 backdrop-blur-xl border border-white/15"
         />
 
-        <div className="relative z-10 flex flex-col justify-center px-16 text-white">
+        <div className="relative z-10 flex flex-col justify-center px-16 text-[#35433B]">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -127,12 +127,12 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
           >
             {/* Logo */}
             <div className="flex items-center gap-3 mb-10">
-              <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-xl flex items-center justify-center shadow-lg border border-white/30">
+              <div className="w-14 h-14 rounded-2xl bg-white/55 backdrop-blur-xl flex items-center justify-center shadow-lg border border-white/60">
                 <Bus className="w-8 h-8" />
               </div>
               <div>
                 <span className="text-2xl font-bold tracking-tight">YellowBird</span>
-                <p className="text-xs text-white/70 font-medium">School Transport System</p>
+                <p className="text-xs text-[#35433B]/65 font-medium">School Transport System</p>
               </div>
             </div>
 
@@ -141,7 +141,7 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
               Real-Time School Bus<br />
               Tracking Platform
             </h2>
-            <p className="text-amber-100 text-lg leading-relaxed max-w-md mb-12">
+            <p className="text-[#35433B]/75 text-lg leading-relaxed max-w-md mb-12">
               Track every bus in real-time using just a smartphone.
               No GPS hardware required. Built for modern schools.
             </p>
@@ -151,7 +151,7 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
               {features.map(({ icon: Icon, label }) => (
                 <span
                   key={label}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/10 backdrop-blur-sm text-sm font-medium border border-white/20"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/45 backdrop-blur-sm text-sm font-medium border border-white/50 text-[#35433B]"
                 >
                   <Icon className="w-4 h-4" />
                   {label}
@@ -186,7 +186,7 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
           className="absolute bottom-4 left-6 w-20 h-20 rounded-full bg-white/5 backdrop-blur-xl border border-white/10"
         />
 
-        <div className="relative z-10 px-6 pt-12 pb-8 text-white" style={{ paddingTop: 'max(3rem, env(safe-area-inset-top, 12px) + 2rem)' }}>
+        <div className="relative z-10 px-6 pt-12 pb-8 text-[#35433B]" style={{ paddingTop: 'max(3rem, env(safe-area-inset-top, 12px) + 2rem)' }}>
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -199,7 +199,7 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
               </div>
               <div>
                 <span className="text-xl font-bold tracking-tight">YellowBird</span>
-                <p className="text-[10px] text-white/70 font-medium leading-tight">School Transport System</p>
+                <p className="text-[10px] text-[#35433B]/65 font-medium leading-tight">School Transport System</p>
               </div>
             </div>
 
@@ -208,7 +208,7 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
               Real-Time School Bus<br />
               Tracking Platform
             </h2>
-            <p className="text-amber-100 text-sm leading-relaxed max-w-sm mb-5">
+            <p className="text-[#35433B]/75 text-sm leading-relaxed max-w-sm mb-5">
               Track every bus in real-time. No GPS hardware required.
             </p>
 
@@ -217,7 +217,7 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
               {features.map(({ icon: Icon, label }) => (
                 <span
                   key={label}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-sm text-xs font-medium whitespace-nowrap border border-white/20"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/45 backdrop-blur-sm text-xs font-medium whitespace-nowrap border border-white/50 text-[#35433B]"
                 >
                   <Icon className="w-3 h-3 flex-shrink-0" />
                   {label}
@@ -228,11 +228,11 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
         </div>
 
         {/* Curved bottom edge for smooth transition to form */}
-        <div className="absolute bottom-0 left-0 right-0 h-6 bg-white dark:bg-gray-950 rounded-t-[28px]" />
+        <div className="absolute bottom-0 left-0 right-0 h-6 bg-[#FFFDF8] rounded-t-[28px]" />
       </div>
 
       {/* ====================== RIGHT PANEL — Login Form ====================== */}
-      <div className="flex-1 flex items-center justify-center px-5 sm:px-8 py-8 lg:py-0 bg-white dark:bg-gray-950">
+      <div className="flex-1 flex items-center justify-center px-5 sm:px-8 py-8 lg:py-0 bg-[#FFFDF8]">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -240,10 +240,10 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
           className="w-full max-w-md"
         >
           {/* Heading */}
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1.5">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#35433B] mb-1.5">
             {appMode === 'admin' ? 'Admin Portal' : 'Welcome back'}
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base mb-7">
+          <p className="text-[#817A6D] text-sm sm:text-base mb-7">
             {appMode === 'admin' ? 'Sign in with your administrator account' : 'Sign in to your account to continue'}
           </p>
 
@@ -275,14 +275,14 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Email */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-[#514D43] mb-2">
                 Email Address
               </label>
               <div className="relative">
                 <input
                   type="email"
                   {...register('email')}
-                  className="w-full px-4 py-3.5 sm:py-3 rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 text-gray-900 dark:text-white text-sm sm:text-base outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 focus:bg-white dark:focus:bg-gray-800 transition-all placeholder:text-gray-400"
+                  className="w-full px-4 py-3.5 sm:py-3 rounded-xl border border-[#E7DFD0] bg-[#FFFEFA] text-[#35433B] text-sm sm:text-base outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 focus:bg-white transition-all placeholder:text-gray-400"
                   placeholder="you@school.edu"
                   autoComplete="email"
                   inputMode="email"
@@ -299,7 +299,7 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
             {/* Password */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="text-sm font-medium text-[#514D43]">
                   Password
                 </label>
                 <button
@@ -339,7 +339,7 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
               type="submit"
               disabled={isLoading}
               whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center justify-center gap-2 py-3.5 sm:py-3 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 hover:from-brand-600 hover:to-amber-600 text-white font-semibold text-sm sm:text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-brand-500/25 hover:shadow-xl hover:shadow-brand-500/30 active:shadow-md"
+              className="w-full flex items-center justify-center gap-2 py-3.5 sm:py-3 rounded-xl bg-[#35433B] hover:bg-[#27342D] text-white font-semibold text-sm sm:text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-[#35433B]/15 hover:shadow-xl hover:shadow-[#35433B]/20 active:shadow-md"
             >
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -351,7 +351,7 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
             </motion.button>
           </form>
 
-          {/* New School Registration Link */}
+          {appMode !== 'mobile' && (<>{/* New School Registration Link */}
           <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 text-center">
             <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
               New School Institution?{' '}
@@ -364,8 +364,9 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
               </button>
             </p>
           </div>
+          </>)}
 
-          {/* Download Mobile App Link */}
+          {appMode !== 'mobile' && (<>{/* Download Mobile App Link */}
           <div className="mt-3 text-center">
             <a
               href="/download"
@@ -375,8 +376,9 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
               Download Android App (.apk) →
             </a>
           </div>
+          </>)}
 
-          {/* Quick Admin Portal Link */}
+          {appMode !== 'mobile' && (<>{/* Quick Admin Portal Link */}
           {appMode !== 'admin' && (
             <div className="mt-4 text-center">
               <a
@@ -388,8 +390,10 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
               </a>
             </div>
           )}
+          </>)}
 
-          {/* Demo Credentials */}
+          {appMode !== 'mobile' && (
+          /* Demo Credentials */
           <div className="mt-6 p-4 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100/50 dark:from-gray-800/60 dark:to-gray-800/30 border border-gray-200 dark:border-gray-700/50">
             <div className="flex items-center justify-between mb-3">
               <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -419,6 +423,8 @@ export function LoginPage({ appMode = 'unified' }: { appMode?: 'mobile' | 'admin
               </div>
             </div>
           </div>
+
+          )}
 
           {/* Bottom safe area spacer for mobile */}
           <div className="h-6 lg:h-0" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }} />

@@ -42,25 +42,25 @@ const queryClient = new QueryClient({
 function MobileGuard() {
   const { isAuthenticated, user } = useAuthStore();
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user) {
     return <Navigate to="/login" replace />;
   }
 
   // Block admin users — they should use the admin portal
   if (user?.role === ROLES.SUPER_ADMIN || user?.role === ROLES.SCHOOL_ADMIN) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-6">
+      <div className="min-h-screen flex items-center justify-center bg-[#FFF9ED] p-6">
         <div className="text-center max-w-sm">
-          <div className="w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">🖥️</span>
+          <div className="w-16 h-16 bg-[#F7EBCB] rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl font-extrabold text-[#35433B]">YB</span>
           </div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Admin Portal Required</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
+          <h2 className="text-lg font-bold text-[#35433B] mb-2">Admin Portal Required</h2>
+          <p className="text-sm text-[#817A6D] mb-6">
             This app is for drivers and parents only. Please use the Admin Portal on your computer.
           </p>
           <a
             href="/admin/"
-            className="inline-block px-6 py-3 bg-brand-500 text-white font-semibold text-sm rounded-xl hover:bg-brand-600 transition-colors"
+            className="inline-block px-6 py-3 bg-[#35433B] text-white font-semibold text-sm rounded-xl hover:bg-[#27342D] transition-colors"
           >
             Open Admin Portal →
           </a>
@@ -90,7 +90,7 @@ function MobileRedirect() {
 
 function NotFoundMobile() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+    <div className="min-h-screen flex items-center justify-center bg-[#FFF9ED]">
       <div className="text-center p-6">
         <h1 className="text-6xl font-bold text-brand-500 mb-3">404</h1>
         <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">Page not found</p>
